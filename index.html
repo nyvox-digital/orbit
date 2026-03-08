@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ORBIT — Criativos para Instagram</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --ink:#08080d; --ink2:#0f0f16; --ink3:#17171f; --ink4:#1e1e28;
+  --wire:#232330; --wire2:#2e2e3e;
+  --neon:#e8ff47; --neon2:#47ffce; --neon3:#ff6b47; --neon4:#c147ff;
+  --dim:#5a5a72; --pale:#9898b0; --snow:#f2f2ff;
+  --fd:'Bricolage Grotesque',sans-serif;
+  --fm:'JetBrains Mono',monospace;
+}
+
+html{scroll-behavior:smooth}
+body{font-family:var(--fd);background:var(--ink);color:var(--snow);min-height:100vh;overflow-x:hidden}
+
+body::before{content:'';position:fixed;inset:0;z-index:0;
+  background-image:linear-gradient(rgba(232,255,71,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(232,255,71,0.025) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none}
+.ambient{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 80% 50% at -10% 0%,rgba(232,255,71,0.05) 0%,transparent 55%),
+    radial-gradient(ellipse 60% 70% at 110% 100%,rgba(193,71,255,0.04) 0%,transparent 55%)}
+
+/* ── LAYOUT ── */
+.shell{position:relative;z-index:1;display:flex;flex-direction:column;min-height:100vh}
+
+/* NAV */
+nav{display:flex;align-items:center;padding:24px 32px;border-bottom:1px solid var(--wire)}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-orb{width:32px;height:32px;border:2px solid var(--neon);border-radius:50%;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0}
+.logo-orb::after{content:'';width:7px;height:7px;background:var(--neon);border-radius:50%;box-shadow:0 0 10px var(--neon)}
+.logo-orb::before{content:'';position:absolute;width:46px;height:46px;border:1px solid rgba(232,255,71,0.12);border-radius:50%}
+.logo-name{font-size:18px;font-weight:800;letter-spacing:4px;text-transform:uppercase}
+.logo-name em{font-style:normal;color:var(--neon)}
+.nav-tag{margin-left:auto;font-family:var(--fm);font-size:10px;letter-spacing:2px;color:var(--dim);border:1px solid var(--wire2);padding:5px 12px;border-radius:99px;display:flex;align-items:center;gap:6px}
+.live-dot{width:5px;height:5px;background:var(--neon);border-radius:50%;box-shadow:0 0 6px var(--neon);animation:blink 2s ease infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* ── 3-STEP PROGRESS ── */
+.steps-bar{display:flex;align-items:center;gap:0;padding:0 32px;border-bottom:1px solid var(--wire);background:var(--ink2)}
+.step{display:flex;align-items:center;gap:10px;padding:16px 20px;font-size:12px;font-weight:600;color:var(--dim);cursor:pointer;transition:color 0.2s;border-bottom:2px solid transparent;position:relative}
+.step.active{color:var(--snow);border-bottom-color:var(--neon)}
+.step.done{color:var(--neon2)}
+.step-num{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--wire2);display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:10px;flex-shrink:0;transition:all 0.2s}
+.step.active .step-num{border-color:var(--neon);color:var(--neon)}
+.step.done .step-num{border-color:var(--neon2);background:rgba(71,255,206,0.1);color:var(--neon2)}
+.step-sep{width:32px;height:1px;background:var(--wire)}
+
+/* ── PAGES ── */
+.page{display:none;flex:1;padding:32px}
+.page.active{display:block}
+
+/* ── STEP 1: FORM ── */
+.form-container{max-width:900px;margin:0 auto}
+.page-title{font-size:28px;font-weight:800;letter-spacing:-0.5px;margin-bottom:6px}
+.page-sub{font-size:14px;color:var(--pale);font-weight:300;margin-bottom:32px}
+
+.mode-switch{display:flex;gap:4px;background:var(--ink2);border:1px solid var(--wire);border-radius:12px;padding:4px;width:fit-content;margin-bottom:28px}
+.mode-btn{padding:9px 22px;border-radius:8px;border:none;background:transparent;font-family:var(--fd);font-size:13px;font-weight:600;color:var(--dim);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:7px}
+.mode-btn svg{flex-shrink:0}
+.mode-btn.active{background:var(--neon);color:var(--ink)}
+.mode-btn:not(.active):hover{color:var(--snow)}
+
+.form-card{background:var(--ink2);border:1px solid var(--wire);border-radius:18px;overflow:hidden;margin-bottom:16px}
+.form-section{padding:28px;border-bottom:1px solid var(--wire)}
+.form-section:last-child{border-bottom:none}
+.fs-label{font-family:var(--fm);font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--neon);margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.fs-label::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--wire),transparent)}
+
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.span2{grid-column:span 2}
+.fgroup{display:flex;flex-direction:column;gap:7px}
+.flabel{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--pale)}
+
+input[type=text],textarea,select{background:var(--ink3);border:1px solid var(--wire);border-radius:9px;color:var(--snow);font-family:var(--fd);font-size:14px;padding:11px 14px;width:100%;outline:none;transition:border-color 0.2s,box-shadow 0.2s;appearance:none}
+input::placeholder,textarea::placeholder{color:var(--wire2)}
+input:focus,textarea:focus,select:focus{border-color:var(--neon);box-shadow:0 0 0 3px rgba(232,255,71,0.07)}
+textarea{resize:vertical;min-height:76px;line-height:1.6}
+select option{background:#17171f}
+.sel-wrap{position:relative}
+.sel-wrap::after{content:'';position:absolute;right:12px;top:50%;transform:translateY(-50%);width:10px;height:10px;pointer-events:none;background:var(--dim);-webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+
+/* QUICK PILLS */
+.qpills{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.qpill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;padding:4px 10px;border-radius:99px;background:var(--ink3);border:1px solid var(--wire);color:var(--pale);cursor:pointer;transition:all 0.15s}
+.qpill:hover,.qpill.on{background:rgba(232,255,71,0.07);border-color:var(--neon);color:var(--neon)}
+
+/* CHOICE GRID */
+.choice-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.choice{padding:13px 10px;border:1px solid var(--wire);border-radius:11px;background:var(--ink3);cursor:pointer;transition:all 0.15s;text-align:center}
+.choice:hover{border-color:var(--wire2)}
+.choice.on{border-color:var(--neon);background:rgba(232,255,71,0.05);box-shadow:0 0 14px rgba(232,255,71,0.08)}
+.choice-icon{width:30px;height:30px;margin:0 auto 7px;display:flex;align-items:center;justify-content:center;color:var(--pale)}
+.choice.on .choice-icon{color:var(--neon)}
+.choice-label{font-size:11px;font-weight:700;color:var(--pale);letter-spacing:0.3px}
+.choice.on .choice-label{color:var(--neon)}
+
+/* TOM PILLS */
+.tom-row{display:flex;flex-wrap:wrap;gap:7px}
+.tom{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:99px;border:1px solid var(--wire);background:var(--ink3);font-size:12px;font-weight:600;color:var(--dim);cursor:pointer;transition:all 0.15s}
+.tom:hover{color:var(--pale)}
+.tom.on{border-color:var(--neon2);color:var(--neon2);background:rgba(71,255,206,0.06)}
+
+/* CARR TYPE CARDS */
+.carr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.carr-type{padding:16px;border:1px solid var(--wire);border-radius:12px;background:var(--ink3);cursor:pointer;transition:all 0.15s;display:flex;align-items:flex-start;gap:11px}
+.carr-type:hover{border-color:var(--wire2)}
+.carr-type.on{border-color:var(--neon4);background:rgba(193,71,255,0.06)}
+.carr-type-icon{width:28px;height:28px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--pale)}
+.carr-type.on .carr-type-icon{color:var(--neon4)}
+.carr-type-name{font-size:12px;font-weight:700;color:var(--snow);margin-bottom:3px}
+.carr-type.on .carr-type-name{color:var(--neon4)}
+.carr-type-desc{font-size:10px;color:var(--dim);line-height:1.5}
+
+/* SLIDES COUNTER */
+.slides-ctrl{display:flex;align-items:center;gap:14px}
+.scount{font-family:var(--fm);font-size:28px;font-weight:500;color:var(--neon4);min-width:32px;text-align:center}
+.sc-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--wire2);background:var(--ink3);color:var(--snow);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.sc-btn:hover{border-color:var(--neon4);color:var(--neon4)}
+
+/* GENERATE BUTTON */
+.btn-gen{width:100%;padding:17px;background:var(--neon);border:none;border-radius:12px;font-family:var(--fd);font-size:15px;font-weight:800;color:var(--ink);cursor:pointer;transition:transform 0.15s,box-shadow 0.15s,opacity 0.2s;box-shadow:0 8px 36px rgba(232,255,71,0.22);display:flex;align-items:center;justify-content:center;gap:10px;position:relative;overflow:hidden}
+.btn-gen::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 40%,rgba(255,255,255,0.18) 60%,transparent 70%);transform:translateX(-100%);transition:transform 0.5s}
+.btn-gen:hover::before{transform:translateX(100%)}
+.btn-gen:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 14px 44px rgba(232,255,71,0.32)}
+.btn-gen:disabled{opacity:0.45;cursor:not-allowed}
+.btn-gen.carr{background:var(--neon4);box-shadow:0 8px 36px rgba(193,71,255,0.22)}
+.btn-gen.carr:hover:not(:disabled){box-shadow:0 14px 44px rgba(193,71,255,0.32)}
+.spin{width:18px;height:18px;border:2.5px solid rgba(8,8,13,0.25);border-top-color:var(--ink);border-radius:50%;animation:spin 0.7s linear infinite;display:none;flex-shrink:0}
+.btn-gen.loading .spin{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.err-box{margin-top:10px;padding:12px 16px;background:rgba(255,107,71,0.07);border:1px solid rgba(255,107,71,0.25);border-radius:9px;color:var(--neon3);font-size:13px;display:none}
+
+/* ── STEP 2: PREVIEW + CHAT ── */
+.preview-shell{display:grid;grid-template-columns:1fr 420px;gap:0;height:calc(100vh - 120px);max-height:900px}
+
+/* PREVIEW PANEL */
+.preview-panel{overflow-y:auto;padding:28px;border-right:1px solid var(--wire);display:flex;flex-direction:column;gap:0}
+.preview-topbar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-shrink:0}
+.preview-title{font-size:18px;font-weight:800}
+.preview-badge{font-family:var(--fm);font-size:10px;letter-spacing:1px;padding:4px 10px;border-radius:5px;background:rgba(232,255,71,0.07);border:1px solid rgba(232,255,71,0.18);color:var(--neon)}
+.preview-actions{margin-left:auto;display:flex;gap:8px}
+.pv-btn{padding:7px 14px;border-radius:8px;font-family:var(--fd);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:6px;border:1px solid var(--wire2);background:transparent;color:var(--pale)}
+.pv-btn:hover{color:var(--snow);border-color:var(--pale)}
+.pv-btn.dl-png{border-color:rgba(71,255,206,0.25);color:var(--neon2);background:rgba(71,255,206,0.05)}
+.pv-btn.dl-png:hover{background:rgba(71,255,206,0.12)}
+.pv-btn.dl-html{border-color:rgba(232,255,71,0.25);color:var(--neon);background:rgba(232,255,71,0.05)}
+.pv-btn.dl-html:hover{background:rgba(232,255,71,0.12)}
+.pv-btn.dl-zip{border-color:rgba(255,107,71,0.25);color:var(--neon3);background:rgba(255,107,71,0.05)}
+.pv-btn.dl-zip:hover{background:rgba(255,107,71,0.12)}
+
+/* CREATIVE PREVIEW CARD */
+.pv-criativo{border-radius:14px;overflow:hidden;border:1px solid var(--wire2);margin-bottom:4px;transition:box-shadow 0.3s}
+.pv-criativo.refreshing{animation:pulse-card 0.4s ease}
+@keyframes pulse-card{0%,100%{opacity:1}50%{opacity:0.5}}
+
+/* CAROUSEL PREVIEW */
+.pv-carr-slides{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;scrollbar-width:thin;scrollbar-color:var(--wire2) transparent;flex-shrink:0}
+.pv-carr-slides::-webkit-scrollbar{height:3px}
+.pv-carr-slides::-webkit-scrollbar-thumb{background:var(--wire2);border-radius:2px}
+.pv-slide-wrap{flex-shrink:0;width:220px;border-radius:12px;overflow:hidden;border:1px solid var(--wire);transition:border-color 0.15s}
+.pv-slide-wrap:hover{border-color:var(--wire2)}
+.pv-slide-wrap.active-slide{border-color:var(--neon4)}
+
+.pv-caption-box{background:var(--ink2);border:1px solid var(--wire);border-radius:12px;padding:18px;flex-shrink:0}
+.pv-cap-label{font-family:var(--fm);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-bottom:10px}
+.pv-cap-text{font-size:13px;line-height:1.8;color:var(--pale);font-weight:300}
+.pv-cap-hash{font-family:var(--fm);font-size:10px;color:rgba(193,71,255,0.7);line-height:1.8;margin-top:8px}
+
+/* ── CREATIVE CARD DESIGN ── */
+.criativo-card{padding:36px 32px;min-height:380px;position:relative;font-family:var(--fd)}
+.cc-grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(232,255,71,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(232,255,71,0.02) 1px,transparent 1px);background-size:28px 28px;pointer-events:none}
+.cc-accent{height:3px;width:44px;border-radius:2px;margin-bottom:18px;position:relative;z-index:1}
+.cc-tag{font-family:var(--fm);font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:3px 9px;border-radius:4px;display:inline-block;margin-bottom:14px;position:relative;z-index:1}
+.cc-headline{font-size:24px;font-weight:800;line-height:1.3;letter-spacing:-0.4px;margin-bottom:13px;position:relative;z-index:1}
+.cc-caption{font-size:13px;line-height:1.8;font-weight:300;margin-bottom:14px;position:relative;z-index:1}
+.cc-cta{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:8px 15px;border-radius:8px;margin-bottom:14px;position:relative;z-index:1}
+.cc-hashtags{font-family:var(--fm);font-size:10px;line-height:1.8;position:relative;z-index:1;opacity:0.7}
+
+/* SLIDE CARD */
+.slide-card{padding:26px 22px;min-height:300px;position:relative;font-family:var(--fd)}
+.sc-grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(232,255,71,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(232,255,71,0.015) 1px,transparent 1px);background-size:20px 20px;pointer-events:none}
+.sc-num{font-family:var(--fm);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:14px;position:relative;z-index:1}
+.sc-bar{width:28px;height:3px;border-radius:2px;margin-bottom:14px;position:relative;z-index:1}
+.sc-headline{font-size:16px;font-weight:800;line-height:1.35;letter-spacing:-0.2px;margin-bottom:9px;position:relative;z-index:1}
+.sc-body{font-size:11px;line-height:1.65;font-weight:300;position:relative;z-index:1}
+
+/* ── CHAT PANEL ── */
+.chat-panel{display:flex;flex-direction:column;background:var(--ink2);overflow:hidden}
+.chat-header{padding:18px 20px;border-bottom:1px solid var(--wire);flex-shrink:0}
+.chat-title{font-size:14px;font-weight:800;margin-bottom:3px;display:flex;align-items:center;gap:8px}
+.chat-subtitle{font-size:11px;color:var(--dim)}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:var(--wire2) transparent}
+.chat-messages::-webkit-scrollbar{width:3px}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--wire2);border-radius:2px}
+
+/* MESSAGES */
+.msg{display:flex;flex-direction:column;gap:4px;animation:msgIn 0.25s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.ai{align-items:flex-start}
+.msg.user{align-items:flex-end}
+.msg-bubble{padding:11px 14px;border-radius:12px;font-size:13px;line-height:1.6;max-width:88%}
+.msg.ai .msg-bubble{background:var(--ink3);border:1px solid var(--wire);border-bottom-left-radius:4px;color:var(--pale)}
+.msg.user .msg-bubble{background:rgba(232,255,71,0.1);border:1px solid rgba(232,255,71,0.2);border-bottom-right-radius:4px;color:var(--snow)}
+.msg-time{font-family:var(--fm);font-size:9px;color:var(--dim);letter-spacing:0.5px}
+.msg-img{max-width:180px;border-radius:8px;border:1px solid var(--wire);margin-top:4px}
+
+/* TYPING INDICATOR */
+.typing-bubble{padding:12px 16px;background:var(--ink3);border:1px solid var(--wire);border-radius:12px;border-bottom-left-radius:4px;display:inline-flex;gap:5px;align-items:center}
+.typing-dot{width:6px;height:6px;background:var(--dim);border-radius:50%;animation:tdot 1.2s ease infinite}
+.typing-dot:nth-child(2){animation-delay:0.2s}
+.typing-dot:nth-child(3){animation-delay:0.4s}
+@keyframes tdot{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* CHAT INPUT */
+.chat-input-area{flex-shrink:0;border-top:1px solid var(--wire);padding:14px}
+.chat-img-preview{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.img-thumb{position:relative;width:54px;height:54px;border-radius:7px;overflow:hidden;border:1px solid var(--wire2)}
+.img-thumb img{width:100%;height:100%;object-fit:cover}
+.img-thumb-rm{position:absolute;top:2px;right:2px;width:16px;height:16px;background:rgba(8,8,13,0.8);border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--neon3)}
+.chat-row{display:flex;gap:8px;align-items:flex-end}
+.chat-textarea{flex:1;background:var(--ink3);border:1px solid var(--wire);border-radius:10px;color:var(--snow);font-family:var(--fd);font-size:13px;padding:10px 12px;resize:none;outline:none;max-height:100px;min-height:40px;transition:border-color 0.2s;line-height:1.5}
+.chat-textarea:focus{border-color:var(--neon)}
+.chat-textarea::placeholder{color:var(--wire2)}
+.chat-btns{display:flex;gap:6px;flex-shrink:0}
+.chat-icon-btn{width:38px;height:38px;border-radius:9px;border:1px solid var(--wire2);background:var(--ink3);color:var(--pale);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.chat-icon-btn:hover{border-color:var(--pale);color:var(--snow)}
+.chat-send{width:38px;height:38px;border-radius:9px;border:none;background:var(--neon);color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;flex-shrink:0}
+.chat-send:hover{box-shadow:0 0 16px rgba(232,255,71,0.3)}
+.chat-send:disabled{opacity:0.35;cursor:not-allowed}
+.chat-hints{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.chat-hint{font-size:11px;padding:4px 9px;border-radius:99px;background:var(--ink3);border:1px solid var(--wire);color:var(--dim);cursor:pointer;transition:all 0.15s}
+.chat-hint:hover{border-color:var(--wire2);color:var(--pale)}
+#img-upload{display:none}
+
+/* STYLE VARS on criativo */
+.criativo-card{
+  --cc-bg: #0f0f16;
+  --cc-accent: #e8ff47;
+  --cc-accent2: #47ffce;
+  --cc-headline: #f2f2ff;
+  --cc-caption: #9898b0;
+  --cc-tag-color: #e8ff47;
+  --cc-cta-color: #47ffce;
+  --cc-hash-color: rgba(193,71,255,0.8);
+  background: var(--cc-bg);
+}
+.cc-accent{background:linear-gradient(90deg,var(--cc-accent),var(--cc-accent2))}
+.cc-tag{color:var(--cc-tag-color);border:1px solid color-mix(in srgb,var(--cc-tag-color) 25%,transparent);background:color-mix(in srgb,var(--cc-tag-color) 8%,transparent)}
+.cc-headline{color:var(--cc-headline)}
+.cc-caption{color:var(--cc-caption)}
+.cc-cta{color:var(--cc-cta-color);border:1px solid color-mix(in srgb,var(--cc-cta-color) 25%,transparent);background:color-mix(in srgb,var(--cc-cta-color) 8%,transparent)}
+.cc-hashtags{color:var(--cc-hash-color)}
+
+/* SLIDE VARS */
+.slide-card{
+  --sc-bg:#0f0f16;
+  --sc-bar:#47ffce;
+  --sc-headline:#f2f2ff;
+  background:var(--sc-bg)
+}
+.sc-bar{background:var(--sc-bar)}
+.sc-headline{color:var(--sc-headline)}
+
+/* NAVIGATOR DOTS for post */
+.nav-dots{display:flex;gap:6px;justify-content:center;margin:14px 0 0}
+.nav-dot{width:7px;height:7px;border-radius:50%;background:var(--wire2);cursor:pointer;transition:all 0.15s}
+.nav-dot.on{background:var(--neon);transform:scale(1.2)}
+
+/* STEP 3: DOWNLOAD */
+.dl-page{max-width:700px;margin:0 auto;padding:40px 0}
+.dl-title{font-size:26px;font-weight:800;letter-spacing:-0.5px;margin-bottom:6px}
+.dl-sub{font-size:14px;color:var(--pale);font-weight:300;margin-bottom:32px}
+.dl-options{display:flex;flex-direction:column;gap:14px;margin-bottom:32px}
+.dl-opt{background:var(--ink2);border:1px solid var(--wire);border-radius:14px;padding:22px 24px;display:flex;align-items:center;gap:18px;transition:border-color 0.15s}
+.dl-opt:hover{border-color:var(--wire2)}
+.dl-opt-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dl-opt-info{flex:1}
+.dl-opt-name{font-size:15px;font-weight:700;margin-bottom:3px}
+.dl-opt-desc{font-size:12px;color:var(--dim)}
+.dl-btn{padding:10px 22px;border-radius:9px;border:none;font-family:var(--fd);font-size:13px;font-weight:700;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:7px;flex-shrink:0}
+.dl-btn.a{background:var(--neon);color:var(--ink)}
+.dl-btn.b{background:rgba(71,255,206,0.1);border:1px solid rgba(71,255,206,0.25);color:var(--neon2)}
+.dl-btn.c{background:rgba(255,107,71,0.1);border:1px solid rgba(255,107,71,0.25);color:var(--neon3)}
+.dl-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,0.3)}
+.dl-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+.back-link{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--dim);cursor:pointer;transition:color 0.15s;margin-top:20px}
+.back-link:hover{color:var(--snow)}
+
+/* ── RESPONSIVE ── */
+
+/* Tablet (≤900px) */
+@media(max-width:900px){
+  nav{padding:16px 20px}
+  .nav-tag{font-size:9px;padding:4px 10px}
+
+  .steps-bar{padding:0 12px;overflow-x:auto;scrollbar-width:none}
+  .steps-bar::-webkit-scrollbar{display:none}
+  .step{padding:14px 12px;font-size:11px;white-space:nowrap}
+  .step-sep{width:20px}
+
+  .page{padding:16px}
+
+  /* FORM */
+  .form-container{max-width:100%}
+  .page-title{font-size:22px}
+  .row2,.row3{grid-template-columns:1fr}
+  .span2{grid-column:span 1}
+  .choice-grid{grid-template-columns:repeat(3,1fr)}
+  .carr-grid{grid-template-columns:repeat(2,1fr)}
+
+  /* PREVIEW+CHAT: stack vertically */
+  .preview-shell{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:auto;min-height:calc(100vh - 120px)}
+  .preview-panel{border-right:none;border-bottom:1px solid var(--wire);height:auto;max-height:none;overflow-y:visible}
+  .chat-panel{height:480px}
+
+  /* DL page */
+  .dl-page{padding:24px 0}
+  .dl-opt{flex-wrap:wrap;gap:12px}
+  .dl-btn{width:100%;justify-content:center}
+}
+
+/* Mobile (≤600px) */
+@media(max-width:600px){
+  nav{padding:14px 16px}
+  .logo-name{font-size:15px;letter-spacing:3px}
+  .nav-tag span:not(.live-dot){display:none}
+  .nav-tag{padding:5px 8px;gap:4px}
+
+  .steps-bar{padding:0 8px}
+  .step{padding:12px 8px;gap:6px;font-size:10px}
+  .step-num{width:18px;height:18px;font-size:9px}
+
+  .page{padding:12px}
+
+  /* FORM */
+  .page-title{font-size:19px}
+  .page-sub{font-size:12px;margin-bottom:20px}
+  .mode-switch{width:100%}
+  .mode-btn{flex:1;justify-content:center;padding:8px 10px;font-size:12px}
+  .form-section{padding:18px 14px}
+  .choice-grid{grid-template-columns:repeat(2,1fr);gap:6px}
+  .choice{padding:10px 6px}
+  .choice-icon{width:24px;height:24px;margin-bottom:5px}
+  .choice-label{font-size:10px}
+  .carr-grid{grid-template-columns:1fr 1fr;gap:7px}
+  .carr-type{padding:12px 8px;gap:7px}
+  .carr-type-name{font-size:11px}
+  .carr-type-desc{font-size:9px}
+  .tom-row{gap:5px}
+  .tom{font-size:11px;padding:6px 10px}
+  .qpills{gap:5px}
+  .qpill{font-size:10px;padding:4px 8px}
+  .slides-ctrl{gap:10px}
+  .scount{font-size:22px}
+  .btn-gen{font-size:14px;padding:15px}
+
+  /* PREVIEW */
+  .preview-topbar{flex-wrap:wrap;gap:8px}
+  .preview-title{font-size:15px}
+  .preview-actions{width:100%;justify-content:flex-end}
+  .pv-btn{font-size:11px;padding:6px 10px}
+  .criativo-card{padding:22px 18px;min-height:auto}
+  .cc-headline{font-size:20px !important}
+  .cc-caption{font-size:12px}
+  .pv-slide-wrap{width:170px}
+  .slide-card{padding:18px 14px;min-height:220px}
+  .sc-headline{font-size:13px}
+  .sc-body{font-size:10px}
+
+  /* CHAT */
+  .chat-header{padding:14px 14px}
+  .chat-title{font-size:13px}
+  .chat-messages{padding:12px}
+  .msg-bubble{font-size:12px;padding:9px 11px}
+  .chat-input-area{padding:10px}
+  .chat-textarea{font-size:13px}
+  .chat-hints{gap:4px}
+  .chat-hint{font-size:10px;padding:3px 8px}
+  .chat-icon-btn,.chat-send{width:36px;height:36px}
+
+  /* PAGE 2 bottom bar */
+  #page2 > div:last-child{padding:12px 16px}
+  #page2 > div:last-child .btn-gen{width:100%;font-size:13px;padding:13px}
+
+  /* DL page */
+  .dl-title{font-size:20px}
+  .dl-opt{padding:16px}
+  .dl-opt-icon{width:36px;height:36px;border-radius:9px}
+  .dl-opt-name{font-size:14px}
+  .dl-opt-desc{font-size:11px}
+  .dl-btn{padding:10px 16px;font-size:12px}
+}
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<div class="shell">
+
+  <!-- NAV -->
+  <nav>
+    <div class="logo">
+      <div class="logo-orb"></div>
+      <div class="logo-name">OR<em>B</em>IT</div>
+    </div>
+    <div class="nav-tag"><span class="live-dot"></span> LIVE · AI-POWERED</div>
+  </nav>
+
+  <!-- API KEY BAR -->
+  <div id="keybar" style="background:#0a0a12;border-bottom:1px solid #232330;padding:10px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5a5a72" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+    <div style="display:flex;align-items:center;gap:7px;flex:1;min-width:220px;max-width:380px">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:#e8ff47;white-space:nowrap">ANTHROPIC</span>
+      <input id="apikey-inp" type="password" placeholder="sk-ant-api03-..." autocomplete="off"
+        style="flex:1;background:#17171f;border:1px solid #232330;border-radius:7px;color:#f2f2ff;font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 10px;outline:none;transition:border-color .2s"
+        oninput="saveKey('anthropic',this.value)"
+        onfocus="this.style.borderColor='#e8ff47'" onblur="this.style.borderColor='#232330'">
+      <span id="key-ok-ant" style="font-family:'JetBrains Mono',monospace;font-size:9px;display:none;color:#47ffce;white-space:nowrap">✓</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:7px;flex:1;min-width:220px;max-width:380px">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:#47ffce;white-space:nowrap">OPENAI</span>
+      <input id="openai-inp" type="password" placeholder="sk-proj-..." autocomplete="off"
+        style="flex:1;background:#17171f;border:1px solid #232330;border-radius:7px;color:#f2f2ff;font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 10px;outline:none;transition:border-color .2s"
+        oninput="saveKey('openai',this.value)"
+        onfocus="this.style.borderColor='#47ffce'" onblur="this.style.borderColor='#232330'">
+      <span id="key-ok-oai" style="font-family:'JetBrains Mono',monospace;font-size:9px;display:none;color:#47ffce;white-space:nowrap">✓</span>
+    </div>
+    <span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:#5a5a72;white-space:nowrap">Cole suas keys acima</span>
+  </div>
+
+  <!-- STEPS -->
+  <div class="steps-bar">
+    <div class="step active" id="s1" onclick="goStep(1)">
+      <div class="step-num">1</div> Configurar
+    </div>
+    <div class="step-sep"></div>
+    <div class="step" id="s2">
+      <div class="step-num">2</div> Prévia + Refinamento
+    </div>
+    <div class="step-sep"></div>
+    <div class="step" id="s3">
+      <div class="step-num">3</div> Baixar
+    </div>
+  </div>
+
+  <!-- ══ PAGE 1: FORM ══ -->
+  <div class="page active" id="page1">
+    <div class="form-container">
+      <div class="page-title">Criar novo criativo</div>
+      <div class="page-sub">Preencha as informações do seu negócio. A IA gera e você refina por chat.</div>
+
+      <!-- MODE SWITCH -->
+      <div class="mode-switch">
+        <button class="mode-btn active" id="mode-post" onclick="setMode('post')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          Post / Reels
+        </button>
+        <button class="mode-btn" id="mode-carr" onclick="setMode('carr')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3h2a2 2 0 012 2M8 3H6a2 2 0 00-2 2"/></svg>
+          Carrossel
+        </button>
+      </div>
+
+      <!-- FORM CARD -->
+      <div class="form-card">
+
+        <!-- IDENTIDADE -->
+        <div class="form-section">
+          <div class="fs-label">01 · Identidade do negócio</div>
+          <div class="row2" style="margin-bottom:14px">
+            <div class="fgroup">
+              <div class="flabel">Nicho / Mercado</div>
+              <input type="text" id="f-nicho" placeholder="Ex: Fitness, Finanças, Moda…">
+              <div class="qpills" id="nicho-qpills">
+                <span class="qpill" onclick="qset('f-nicho',this,'Moda Feminina')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.38 3.46L16 2a4 4 0 01-8 0L3.62 3.46a2 2 0 00-1.34 2.23l.58 3.57a1 1 0 00.99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 002-2V10h2.15a1 1 0 00.99-.84l.58-3.57a2 2 0 00-1.34-2.23z"/></svg> Moda</span>
+                <span class="qpill" onclick="qset('f-nicho',this,'Marketing Digital')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Marketing</span>
+                <span class="qpill" onclick="qset('f-nicho',this,'Fitness e Saúde')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/></svg> Fitness</span>
+                <span class="qpill" onclick="qset('f-nicho',this,'Gastronomia')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2M7 2v20M21 15V2a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg> Gastronomia</span>
+                <span class="qpill" onclick="qset('f-nicho',this,'Finanças Pessoais')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg> Finanças</span>
+                <span class="qpill" onclick="qset('f-nicho',this,'Beleza e Estética')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg> Beleza</span>
+                <span class="qpill" onclick="qset('f-nicho',this,'Educação e Cursos')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg> Educação</span>
+                <span class="qpill" onclick="qset('f-nicho',this,'Tecnologia')"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg> Tech</span>
+              </div>
+            </div>
+            <div class="fgroup">
+              <div class="flabel">Produto / Serviço</div>
+              <input type="text" id="f-produto" placeholder="O que você vende ou oferece?">
+            </div>
+          </div>
+          <div class="row2">
+            <div class="fgroup">
+              <div class="flabel">Público-alvo</div>
+              <input type="text" id="f-publico" placeholder="Quem é seu cliente ideal?">
+            </div>
+            <div class="fgroup">
+              <div class="flabel">Diferencial único</div>
+              <input type="text" id="f-diferencial" placeholder="O que te torna especial?">
+            </div>
+          </div>
+        </div>
+
+        <!-- OBJETIVO -->
+        <div class="form-section">
+          <div class="fs-label">02 · Objetivo da publicação</div>
+          <div class="choice-grid" id="obj-grid">
+            <div class="choice on" data-val="visitar_perfil"><div class="choice-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="choice-label">Visitar Perfil</div></div>
+            <div class="choice" data-val="seguir"><div class="choice-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></div><div class="choice-label">Ganhar Seguidor</div></div>
+            <div class="choice" data-val="link_bio"><div class="choice-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></div><div class="choice-label">Link na Bio</div></div>
+            <div class="choice" data-val="dm"><div class="choice-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></div><div class="choice-label">DM / Contato</div></div>
+            <div class="choice" data-val="salvar"><div class="choice-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></div><div class="choice-label">Salvar Post</div></div>
+            <div class="choice" data-val="compra"><div class="choice-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div><div class="choice-label">Compra Direta</div></div>
+          </div>
+        </div>
+
+        <!-- TOM + FORMATO (POST) -->
+        <div class="form-section" id="post-extras">
+          <div class="fs-label">03 · Tom de voz &amp; formato</div>
+          <div class="fgroup" style="margin-bottom:16px">
+            <div class="flabel">Tom de voz</div>
+            <div class="tom-row" id="tom-grid">
+              <span class="tom on" data-val="provocativo"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg> Provocativo</span>
+              <span class="tom" data-val="urgencia"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Urgência</span>
+              <span class="tom" data-val="autoridade"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Autoridade</span>
+              <span class="tom" data-val="inspirador"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg> Inspirador</span>
+              <span class="tom" data-val="direto"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg> Direto</span>
+              <span class="tom" data-val="emocional"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg> Emocional</span>
+              <span class="tom" data-val="humor"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 13s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg> Humor</span>
+              <span class="tom" data-val="exclusivo"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Exclusivo</span>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="fgroup">
+              <div class="flabel">Formato</div>
+              <div class="sel-wrap">
+                <select id="f-formato">
+                  <option value="feed_estatico">Feed (4:5)</option>
+                  <option value="stories">Stories (9:16)</option>
+                </select>
+              </div>
+            </div>
+            <div class="fgroup">
+              <div class="flabel">Variações</div>
+              <div class="sel-wrap">
+                <select id="f-qtd">
+                  <option value="3">3 variações</option>
+                  <option value="4">4 variações</option>
+                  <option value="5">5 variações</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARROSSEL EXTRAS -->
+        <div class="form-section" id="carr-extras" style="display:none">
+          <div class="fs-label">03 · Configurações do carrossel</div>
+          <div class="fgroup" style="margin-bottom:16px">
+            <div class="flabel">Tema central do carrossel</div>
+            <input type="text" id="f-tema" placeholder="Ex: 5 erros que impedem de emagrecer, Como triplicar vendas…">
+          </div>
+          <div class="fgroup" style="margin-bottom:16px">
+            <div class="flabel">Tipo de carrossel</div>
+            <div class="carr-grid" id="carr-tipo-grid">
+              <div class="carr-type on" data-val="educativo"><div class="carr-type-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></div><div><div class="carr-type-name">Educativo</div><div class="carr-type-desc">Tutorial passo a passo</div></div></div>
+              <div class="carr-type" data-val="lista"><div class="carr-type-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div><div><div class="carr-type-name">Lista / Ranking</div><div class="carr-type-desc">X motivos ou dicas</div></div></div>
+              <div class="carr-type" data-val="antes_depois"><div class="carr-type-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 014-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg></div><div><div class="carr-type-name">Antes &amp; Depois</div><div class="carr-type-desc">Transformação visual</div></div></div>
+              <div class="carr-type" data-val="storytelling"><div class="carr-type-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div><div><div class="carr-type-name">Storytelling</div><div class="carr-type-desc">Narrativa emocional</div></div></div>
+              <div class="carr-type" data-val="mitos_verdades"><div class="carr-type-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><div><div class="carr-type-name">Mitos &amp; Verdades</div><div class="carr-type-desc">Quebra de crenças</div></div></div>
+              <div class="carr-type" data-val="vendas"><div class="carr-type-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div><div><div class="carr-type-name">Carrossel de Vendas</div><div class="carr-type-desc">Conversão direta</div></div></div>
+            </div>
+          </div>
+          <div class="row2">
+            <div class="fgroup">
+              <div class="flabel">Número de slides</div>
+              <div class="slides-ctrl">
+                <div class="sc-btn" onclick="chSlides(-1)">−</div>
+                <div class="sc-btn" onclick="chSlides(1)">+</div>
+                <div class="scount" id="sc-num">7</div>
+                <span style="font-size:12px;color:var(--dim)">slides</span>
+              </div>
+            </div>
+            <div class="fgroup">
+              <div class="flabel">Tom de voz</div>
+              <div class="tom-row" id="carr-tom-row">
+                <span class="tom on" data-val="educativo_amigavel"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg> Didático</span>
+                <span class="tom" data-val="provocativo"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg> Provocativo</span>
+                <span class="tom" data-val="autoridade"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Autoridade</span>
+                <span class="tom" data-val="inspirador"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></svg> Inspirador</span>
+                <span class="tom" data-val="urgencia"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Urgente</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /form-card -->
+
+      <button class="btn-gen" id="btn-gen" onclick="startGenerate()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span id="btn-gen-label">Gerar e Ver Prévia</span>
+        <div class="spin"></div>
+      </button>
+      <div class="err-box" id="f-err"></div>
+    </div>
+  </div>
+
+  <!-- ══ PAGE 2: PREVIEW + CHAT ══ -->
+  <div class="page" id="page2">
+    <div class="preview-shell">
+
+      <!-- PREVIEW PANEL -->
+      <div class="preview-panel" id="preview-panel">
+        <div class="preview-topbar">
+          <div class="preview-title" id="pv-title">Prévia</div>
+          <div class="preview-badge" id="pv-badge">—</div>
+          <div class="preview-actions" id="pv-actions"></div>
+        </div>
+        <div id="pv-content"></div>
+      </div>
+
+      <!-- CHAT PANEL -->
+      <div class="chat-panel">
+        <div class="chat-header">
+          <div class="chat-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--neon4)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            Refinamento com IA
+          </div>
+          <div class="chat-subtitle">Peça ajustes de texto, cor, estilo ou envie imagens de referência</div>
+        </div>
+
+        <div class="chat-messages" id="chat-msgs">
+          <div class="msg ai">
+            <div class="msg-bubble">Olá! Sua prévia está pronta. Agora você pode me pedir qualquer ajuste — texto, cores, tom, estilo visual, ou mandar imagens de referência para inspirar o design. O que quer mudar?</div>
+            <div class="msg-time">agora</div>
+          </div>
+        </div>
+
+        <div class="chat-input-area">
+          <div class="chat-img-preview" id="img-preview-row" style="display:none"></div>
+          <div class="chat-row">
+            <textarea class="chat-textarea" id="chat-input" placeholder="Ex: muda o fundo para branco, deixa o título maior, tom mais urgente…" rows="1" onkeydown="chatKey(event)" oninput="autoResize(this)"></textarea>
+            <div class="chat-btns">
+              <label class="chat-icon-btn" title="Anexar imagem">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                <input type="file" id="img-upload" accept="image/*" multiple onchange="handleImgs(event)">
+              </label>
+              <button class="chat-send" id="chat-send-btn" onclick="sendChat()" title="Enviar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="chat-hints" id="chat-hints">
+            <span class="chat-hint" onclick="useHint(this)">Muda o fundo para branco</span>
+            <span class="chat-hint" onclick="useHint(this)">Deixa o título maior e mais impactante</span>
+            <span class="chat-hint" onclick="useHint(this)">Tom mais urgente</span>
+            <span class="chat-hint" onclick="useHint(this)">Cores mais vibrantes</span>
+            <span class="chat-hint" onclick="useHint(this)">Reescreve a legenda</span>
+            <span class="chat-hint" onclick="useHint(this)">Fundo escuro com detalhes dourados</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    <!-- NEXT STEP BTN -->
+    <div style="padding:16px 28px;border-top:1px solid var(--wire);display:flex;justify-content:flex-end;background:var(--ink2)">
+      <button class="btn-gen" style="width:auto;padding:13px 28px" onclick="goStep(3)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Ir para Downloads
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ PAGE 3: DOWNLOAD ══ -->
+  <div class="page" id="page3">
+    <div class="dl-page">
+      <div class="dl-title">Baixar criativo</div>
+      <div class="dl-sub">Escolha o formato ideal para o seu uso.</div>
+      <div class="dl-options" id="dl-options-list"></div>
+      <div class="back-link" onclick="goStep(2)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        Voltar e continuar refinando
+      </div>
+    </div>
+  </div>
+</div><!-- /shell -->
+
+<script>
+// ══ STATE ══
+const S = {
+  mode: 'post',       // 'post' | 'carr'
+  slides: 7,
+  data: null,         // generated data from API
+  style: {},          // dynamic style overrides
+  pendingImgs: [],    // base64 images for chat
+  chatHistory: [],    // [{role,content}]
+  activeIdx: 0,       // active post criativo index
+};
+
+// ══ INIT INTERACTIONS ══
+document.querySelectorAll('.choice-grid .choice').forEach(el => {
+  el.addEventListener('click', () => { el.closest('.choice-grid').querySelectorAll('.choice').forEach(e => e.classList.remove('on')); el.classList.add('on'); });
+});
+document.querySelectorAll('#obj-grid .choice').forEach(el => {
+  el.addEventListener('click', () => { document.querySelectorAll('#obj-grid .choice').forEach(e => e.classList.remove('on')); el.classList.add('on'); });
+});
+['tom-grid','carr-tom-row'].forEach(id => {
+  document.getElementById(id)?.querySelectorAll('.tom').forEach(el => {
+    el.addEventListener('click', () => { el.closest('.tom-row').querySelectorAll('.tom').forEach(e => e.classList.remove('on')); el.classList.add('on'); });
+  });
+});
+document.querySelectorAll('#carr-tipo-grid .carr-type').forEach(el => {
+  el.addEventListener('click', () => { document.querySelectorAll('#carr-tipo-grid .carr-type').forEach(e => e.classList.remove('on')); el.classList.add('on'); });
+});
+
+function qset(inputId, el, val) {
+  document.getElementById(inputId).value = val;
+  el.closest('.qpills').querySelectorAll('.qpill').forEach(p => p.classList.remove('on'));
+  el.classList.add('on');
+}
+
+function setMode(m) {
+  S.mode = m;
+  document.getElementById('mode-post').classList.toggle('active', m === 'post');
+  document.getElementById('mode-carr').classList.toggle('active', m === 'carr');
+  document.getElementById('post-extras').style.display = m === 'post' ? '' : 'none';
+  document.getElementById('carr-extras').style.display = m === 'carr' ? '' : 'none';
+  const btn = document.getElementById('btn-gen');
+  btn.classList.toggle('carr', m === 'carr');
+  document.getElementById('btn-gen-label').textContent = m === 'post' ? 'Gerar e Ver Prévia' : 'Gerar Carrossel e Ver Prévia';
+}
+
+function chSlides(d) {
+  S.slides = Math.max(3, Math.min(12, S.slides + d));
+  document.getElementById('sc-num').textContent = S.slides;
+}
+
+function getVal(id) { return document.getElementById(id)?.value?.trim() || ''; }
+function getOn(groupSel, itemSel) { return document.querySelector(groupSel + ' ' + itemSel + '.on')?.dataset?.val || ''; }
+
+// ══ STEPS ══
+function goStep(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById('page' + i).classList.toggle('active', i === n);
+    const s = document.getElementById('s' + i);
+    s.classList.toggle('active', i === n);
+    if (i < n) s.classList.add('done'); else s.classList.remove('done');
+  });
+  if (n === 3) buildDLPage();
+}
+
+// ══ GENERATE ══
+async function startGenerate() {
+  const nicho = getVal('f-nicho'), produto = getVal('f-produto');
+  const err = document.getElementById('f-err');
+  if (!nicho || !produto) { err.textContent = 'Preencha Nicho e Produto no mínimo.'; err.style.display = 'block'; return; }
+  err.style.display = 'none';
+
+  const btn = document.getElementById('btn-gen');
+  btn.disabled = true; btn.classList.add('loading');
+  document.getElementById('btn-gen-label').textContent = 'Gerando…';
+
+  try {
+    if (S.mode === 'post') await generatePost();
+    else await generateCarr();
+    S.style = {};
+    S.chatHistory = [];
+    S.activeIdx = 0;
+    renderPreview();
+    goStep(2);
+    addAIMsg('Prévia gerada! Agora é só me dizer o que quer ajustar — texto, cores, estilo, ou mande uma imagem de referência. Estou aqui!');
+  } catch(e) {
+    console.error(e);
+    err.textContent = 'Erro ao gerar: ' + e.message;
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.classList.remove('loading');
+    document.getElementById('btn-gen-label').textContent = S.mode === 'post' ? 'Gerar e Ver Prévia' : 'Gerar Carrossel e Ver Prévia';
+  }
+}
+
+async function callClaude(msgs, systemPrompt) {
+  const apiKey = (document.getElementById('apikey-inp')?.value || localStorage.getItem('orbit_key_anthropic') || '').trim();
+  if (!apiKey || !apiKey.startsWith('sk-')) {
+    document.getElementById('apikey-inp')?.focus();
+    throw new Error('Cole sua API Key da Anthropic no campo acima.');
+  }
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system: systemPrompt,
+      messages: msgs
+    })
+  });
+  if (!res.ok) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new Error('API ' + res.status + (errBody?.error?.message ? ': ' + errBody.error.message : ''));
+  }
+  const d = await res.json();
+  return d.content.map(b => b.text || '').join('');
+}
+
+async function generateImage(prompt) {
+  const oaiKey = (document.getElementById('openai-inp')?.value || localStorage.getItem('orbit_key_openai') || '').trim();
+  if (!oaiKey) return null;
+  try {
+    const res = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + oaiKey },
+      body: JSON.stringify({
+        model: 'dall-e-3',
+        prompt: prompt,
+        n: 1,
+        size: '1024x1024',
+        quality: 'standard',
+        response_format: 'b64_json'
+      })
+    });
+    if (!res.ok) return null;
+    const d = await res.json();
+    return 'data:image/png;base64,' + d.data[0].b64_json;
+  } catch(e) {
+    console.warn('Image gen failed:', e);
+    return null;
+  }
+}
+
+async function generatePost() {
+  const objMap = { visitar_perfil:'visitar o perfil do Instagram', seguir:'ganhar novo seguidor', link_bio:'clicar no link da bio', dm:'enviar DM', salvar:'salvar o post', compra:'compra direta' };
+  const tomMap = { provocativo:'provocativo com FOMO', urgencia:'urgência e escassez real', autoridade:'autoridade e expertise', inspirador:'inspiracional e transformador', direto:'direto ao ponto', emocional:'emocional profundo', humor:'bem-humorado e irreverente', exclusivo:'exclusivo e VIP' };
+  const fmtMap = { feed_estatico:'Post estático no Feed', reels:'Reels', stories:'Stories' };
+  const qtd = getVal('f-qtd') || '3';
+  const obj = getOn('#obj-grid', '.choice');
+  const tom = getOn('#tom-grid', '.tom');
+
+  const prompt = `Crie EXATAMENTE ${qtd} criativos COMPLETAMENTE DIFERENTES entre si para Instagram.
+Objetivo: ${objMap[obj]||'visitar o perfil'}
+Nicho: ${getVal('f-nicho')} | Produto: ${getVal('f-produto')} | Público: ${getVal('f-publico')||'geral'} | Diferencial: ${getVal('f-diferencial')||'não informado'}
+Tom: ${tomMap[tom]||'provocativo'} | Formato: ${fmtMap[getVal('f-formato')]||'Feed'}
+
+REGRAS: cada criativo usa técnica psicológica diferente, headlines máx 10 palavras IMPACTANTES, hashtags TODAS diferentes entre criativos.
+Para "tema_visual" escolha um dos: dinheiro, crescimento, alerta, tecnologia, pessoa, produto, grafico, estrela, foguete, coracao — que combine com o nicho.
+Para "esquema" escolha: escuro_dourado, roxo_vibrante, azul_moderno, verde_natureza, vermelho_urgente, preto_premium.
+
+Retorne SOMENTE JSON:
+{"criativos":[{"tipo":"técnica usada","headline":"título impactante","subtitulo":"frase de apoio curta","caption":"legenda com emojis em 4-5 linhas","cta":"call-to-action direto","hashtags":"#h1 #h2...","tema_visual":"dinheiro","esquema":"escuro_dourado"}]}`;
+
+  const raw = await callClaude([{role:'user',content:prompt}], 'Você é o melhor copywriter de Instagram do Brasil. Responda SOMENTE JSON válido, sem markdown.');
+  S.data = JSON.parse(raw.replace(/```json|```/g,'').trim());
+
+  // Generate background images for each criativo
+  const nichoImg = getVal('f-nicho');
+  const produtoImg = getVal('f-produto');
+  const fmtImg = document.getElementById('f-formato')?.value || 'feed_estatico';
+  const fmtRatio = fmtImg === 'stories' ? 'vertical 9:16 portrait' : 'square 4:5';
+  for (let c of S.data.criativos) {
+    const imgPrompt = `Ultra realistic ${fmtRatio} commercial photo, ${produtoImg || nichoImg}, centered hero product shot, professional studio lighting, dramatic depth of field, photorealistic 3D render style, rich colors, dark moody background, no text no words no letters, high end advertising photography`;
+    c.bgImage = await generateImage(imgPrompt);
+  }
+}
+
+async function generateCarr() {
+  const tipoMap = { educativo:'Educativo/Tutorial', lista:'Lista/Ranking', antes_depois:'Antes & Depois', storytelling:'Storytelling', mitos_verdades:'Mitos & Verdades', vendas:'Carrossel de Vendas' };
+  const objMap = { visitar_perfil:'visitar o perfil', seguir:'seguir o perfil', salvar:'salvar', dm:'enviar DM', link_bio:'clicar na bio' };
+  const tipo = getOn('#carr-tipo-grid', '.carr-type');
+  const tom = getOn('#carr-tom-row', '.tom');
+  const obj = getOn('#obj-grid', '.choice');
+
+  const prompt = `Crie um carrossel para Instagram com EXATAMENTE ${S.slides} slides.
+Tipo: ${tipoMap[tipo]||'Educativo'} | Nicho: ${getVal('f-nicho')} | Produto: ${getVal('f-produto')||getVal('f-nicho')} | Tema: ${getVal('f-tema')||'tema relevante do nicho'}
+Tom: ${tom} | Objetivo: ${objMap[obj]||'visitar perfil'}
+
+Slide 1 = capa com gancho forte (tipo:"capa"), slides do meio = desenvolvimento único cada (tipo:"desenvolvimento"), último = CTA poderoso (tipo:"cta").
+
+Retorne SOMENTE JSON:
+{"titulo_carrossel":"título","slides":[{"numero":1,"tipo":"capa","headline":"texto principal","corpo":"texto de apoio 1-2 frases"}],"caption":"legenda completa com emojis e 15 hashtags"}`;
+
+  const raw = await callClaude([{role:'user',content:prompt}], 'Você é o melhor estrategista de conteúdo para Instagram do Brasil. Responda SOMENTE JSON válido, sem markdown.');
+  S.data = JSON.parse(raw.replace(/```json|```/g,'').trim());
+
+  // Generate background image for carousel cover slide
+  const nicho = getVal('f-nicho');
+  const tema = getVal('f-tema');
+  const nichoCarr = getVal('f-nicho');
+  const prodCarr = getVal('f-produto');
+  const capaPrompt = `Ultra realistic square commercial photo, ${prodCarr || nichoCarr}, centered hero product shot, professional studio lighting, dramatic depth of field, photorealistic 3D render style, rich colors, dark moody background, no text no words no letters, high end advertising photography`;
+  S.data.capaImage = await generateImage(capaPrompt);
+}
+
+// ══ RENDER PREVIEW ══
+function renderPreview() {
+  const panel = document.getElementById('pv-content');
+  const actionsEl = document.getElementById('pv-actions');
+
+  if (S.mode === 'post') {
+    const criativos = S.data.criativos || [];
+    document.getElementById('pv-title').textContent = 'Criativos Gerados';
+    document.getElementById('pv-badge').textContent = criativos.length + ' variações';
+
+    // Navigation dots
+    const dotsHTML = criativos.length > 1 ? `<div class="nav-dots">${criativos.map((_,i)=>`<div class="nav-dot ${i===S.activeIdx?'on':''}" onclick="setActivePost(${i})"></div>`).join('')}</div>` : '';
+
+    const c = criativos[S.activeIdx];
+    const st = S.style;
+    panel.innerHTML = `
+      <div class="pv-criativo" id="criativo-render">
+        ${buildCriativoCard(c, st)}
+      </div>
+      ${dotsHTML}`;
+
+    actionsEl.innerHTML = `
+      <button class="pv-btn dl-png" onclick="dlPostPNG()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> PNG</button>
+      <button class="pv-btn dl-html" onclick="dlPostHTML()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> HTML</button>`;
+
+  } else {
+    const data = S.data;
+    const slides = data.slides || [];
+    document.getElementById('pv-title').textContent = data.titulo_carrossel || 'Carrossel';
+    document.getElementById('pv-badge').textContent = slides.length + ' slides';
+
+    const cap = data.caption || '';
+    const hi = cap.lastIndexOf('#');
+    const capText = hi > 0 ? cap.substring(0, hi).trim() : cap;
+    const hashText = hi > 0 ? cap.substring(hi) : '';
+
+    panel.innerHTML = `
+      <div class="pv-carr-slides" id="carr-render">
+        ${slides.map((s,i) => `<div class="pv-slide-wrap" id="slide-${i}">${buildSlideCard(s, i, slides.length, S.style)}</div>`).join('')}
+      </div>
+      <div style="margin-top:16px">
+        <div class="pv-caption-box">
+          <div class="pv-cap-label">Legenda do post</div>
+          <div class="pv-cap-text">${capText.replace(/\n/g,'<br>')}</div>
+          <div class="pv-cap-hash">${hashText}</div>
+        </div>
+      </div>`;
+
+    actionsEl.innerHTML = `
+      <button class="pv-btn dl-zip" onclick="dlCarrZIP()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> ZIP</button>
+      <button class="pv-btn dl-html" onclick="dlCarrHTML()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> HTML</button>`;
+  }
+}
+
+function setActivePost(i) {
+  S.activeIdx = i;
+  renderPreview();
+}
+
+// ══ VISUAL THEMES ══
+const THEMES = {
+  escuro_dourado: { bg:'#0d0d0d', bg2:'#1a1400', grad:'linear-gradient(135deg,#0d0d0d 0%,#1a1400 100%)', a1:'#f0c040', a2:'#ffaa00', txt:'#ffffff', sub:'#c8a840', shape:'rgba(240,192,64,0.08)' },
+  roxo_vibrante:  { bg:'#0f0518', bg2:'#1a0530', grad:'linear-gradient(135deg,#0f0518 0%,#2a0550 100%)', a1:'#c147ff', a2:'#8b2fd4', txt:'#ffffff', sub:'#d490ff', shape:'rgba(193,71,255,0.1)' },
+  azul_moderno:   { bg:'#030d1f', bg2:'#051530', grad:'linear-gradient(135deg,#030d1f 0%,#0a2040 100%)', a1:'#4facfe', a2:'#00f2fe', txt:'#ffffff', sub:'#7ec8ff', shape:'rgba(79,172,254,0.08)' },
+  verde_natureza: { bg:'#030f08', bg2:'#071a0e', grad:'linear-gradient(135deg,#030f08 0%,#0a2a12 100%)', a1:'#00e676', a2:'#69f0ae', txt:'#ffffff', sub:'#80ffb0', shape:'rgba(0,230,118,0.08)' },
+  vermelho_urgente:{ bg:'#140303', bg2:'#200505', grad:'linear-gradient(135deg,#140303 0%,#300808 100%)', a1:'#ff4444', a2:'#ff7043', txt:'#ffffff', sub:'#ff8080', shape:'rgba(255,68,68,0.08)' },
+  preto_premium:  { bg:'#080808', bg2:'#111111', grad:'linear-gradient(135deg,#080808 0%,#1a1a1a 100%)', a1:'#ffffff', a2:'#cccccc', txt:'#ffffff', sub:'#999999', shape:'rgba(255,255,255,0.05)' },
+};
+
+const VISUAL_SVGS = {
+  dinheiro: `<svg viewBox="0 0 120 120" fill="none"><circle cx="60" cy="60" r="55" stroke="ACCENT" stroke-width="2" opacity="0.3"/><text x="60" y="75" text-anchor="middle" font-size="52" font-family="Arial" fill="ACCENT" opacity="0.9">💰</text></svg>`,
+  crescimento: `<svg viewBox="0 0 120 120" fill="none"><polyline points="10,100 35,65 60,75 85,35 110,15" stroke="ACCENT" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/><circle cx="110" cy="15" r="6" fill="ACCENT" opacity="0.9"/><circle cx="85" cy="35" r="4" fill="ACCENT" opacity="0.6"/></svg>`,
+  alerta: `<svg viewBox="0 0 120 120" fill="none"><polygon points="60,10 110,100 10,100" stroke="ACCENT" stroke-width="3" stroke-linejoin="round" fill="none" opacity="0.7"/><line x1="60" y1="45" x2="60" y2="72" stroke="ACCENT" stroke-width="4" stroke-linecap="round" opacity="0.9"/><circle cx="60" cy="84" r="3" fill="ACCENT" opacity="0.9"/></svg>`,
+  tecnologia: `<svg viewBox="0 0 120 120" fill="none"><rect x="20" y="25" width="80" height="55" rx="6" stroke="ACCENT" stroke-width="2" opacity="0.7"/><line x1="40" y1="90" x2="80" y2="90" stroke="ACCENT" stroke-width="3" stroke-linecap="round" opacity="0.6"/><line x1="60" y1="80" x2="60" y2="90" stroke="ACCENT" stroke-width="2" opacity="0.6"/><line x1="38" y1="42" x2="55" y2="42" stroke="ACCENT" stroke-width="2" stroke-linecap="round" opacity="0.8"/><line x1="38" y1="52" x2="70" y2="52" stroke="ACCENT" stroke-width="2" stroke-linecap="round" opacity="0.6"/><line x1="38" y1="62" x2="62" y2="62" stroke="ACCENT" stroke-width="2" stroke-linecap="round" opacity="0.5"/></svg>`,
+  pessoa: `<svg viewBox="0 0 120 120" fill="none"><circle cx="60" cy="38" r="22" stroke="ACCENT" stroke-width="2.5" opacity="0.8"/><path d="M15 105 C15 80 35 65 60 65 C85 65 105 80 105 105" stroke="ACCENT" stroke-width="2.5" stroke-linecap="round" opacity="0.7"/></svg>`,
+  produto: `<svg viewBox="0 0 120 120" fill="none"><rect x="25" y="30" width="70" height="60" rx="8" stroke="ACCENT" stroke-width="2.5" opacity="0.7"/><path d="M25 52 L95 52" stroke="ACCENT" stroke-width="2" opacity="0.5"/><circle cx="45" cy="41" r="5" fill="ACCENT" opacity="0.6"/><circle cx="60" cy="41" r="5" fill="ACCENT" opacity="0.4"/></svg>`,
+  grafico: `<svg viewBox="0 0 120 120" fill="none"><rect x="15" y="70" width="18" height="35" rx="3" fill="ACCENT" opacity="0.4"/><rect x="42" y="50" width="18" height="55" rx="3" fill="ACCENT" opacity="0.6"/><rect x="69" y="30" width="18" height="75" rx="3" fill="ACCENT" opacity="0.8"/><rect x="96" y="15" width="18" height="90" rx="3" fill="ACCENT" opacity="1"/></svg>`,
+  estrela: `<svg viewBox="0 0 120 120" fill="none"><polygon points="60,8 74,44 112,44 82,67 93,103 60,82 27,103 38,67 8,44 46,44" stroke="ACCENT" stroke-width="2.5" stroke-linejoin="round" opacity="0.8"/></svg>`,
+  foguete: `<svg viewBox="0 0 120 120" fill="none"><path d="M60 15 C75 25 85 45 85 65 L60 80 L35 65 C35 45 45 25 60 15Z" stroke="ACCENT" stroke-width="2.5" stroke-linejoin="round" opacity="0.8"/><circle cx="60" cy="50" r="10" stroke="ACCENT" stroke-width="2" opacity="0.6"/><path d="M35 65 L22 85 L42 78" stroke="ACCENT" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/><path d="M85 65 L98 85 L78 78" stroke="ACCENT" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.5"/></svg>`,
+  coracao: `<svg viewBox="0 0 120 120" fill="none"><path d="M60 95 C60 95 15 65 15 38 C15 22 27 12 40 12 C50 12 58 18 60 24 C62 18 70 12 80 12 C93 12 105 22 105 38 C105 65 60 95 60 95Z" stroke="ACCENT" stroke-width="2.5" stroke-linejoin="round" opacity="0.8"/></svg>`,
+};
+
+function getTheme(esquema) {
+  return THEMES[esquema] || THEMES.escuro_dourado;
+}
+
+function getSVG(tema, accentColor) {
+  const svgStr = VISUAL_SVGS[tema] || VISUAL_SVGS.estrela;
+  return svgStr.replace(/ACCENT/g, accentColor);
+}
+
+// ══ BUILD CARD HTML ══
+function buildCriativoCard(c, st = {}) {
+  const esquema = st.esquema || c.esquema || 'escuro_dourado';
+  const tema = st.tema_visual || c.tema_visual || 'estrela';
+  const T = getTheme(esquema);
+  const bg = st.bg || T.bg;
+  const a1 = st.accent || T.a1;
+  const a2 = st.accent2 || T.a2;
+  const txtColor = st.headlineColor || T.txt;
+  const subColor = st.captionColor || T.sub;
+
+  const svgIcon = getSVG(tema, a1);
+
+  const bgImg = c.bgImage || st.bgImage || null;
+  const bgStyle = bgImg
+    ? `background:url('${bgImg}') center/cover no-repeat`
+    : `background:${T.grad}`;
+
+  const fmt = document.getElementById('f-formato')?.value || 'feed_estatico';
+  const cardAR = fmt === 'stories' ? '9/16' : '4/5';
+  const cardPad = fmt === 'stories' ? '40px 32px' : '32px 28px';
+
+  return `<div style="${bgStyle};position:relative;overflow:hidden;font-family:'Bricolage Grotesque',sans-serif;aspect-ratio:${cardAR};display:flex;flex-direction:column;justify-content:space-between;padding:${cardPad};min-height:340px">
+
+    <!-- BG OVERLAY -->
+    <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
+      ${bgImg
+        ? `<div style="position:absolute;inset:0;background:linear-gradient(160deg,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.45) 50%,rgba(0,0,0,0.75) 100%)"></div>`
+        : `<div style="position:absolute;top:-60px;right:-60px;width:280px;height:280px;border-radius:50%;background:${T.shape};filter:blur(40px)"></div>
+      <div style="position:absolute;bottom:-40px;left:-40px;width:200px;height:200px;border-radius:50%;background:${T.shape};filter:blur(30px)"></div>`
+      }
+      <div style="position:absolute;top:0;left:0;right:0;bottom:0;background-image:linear-gradient(rgba(255,255,255,0.01) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.01) 1px,transparent 1px);background-size:32px 32px"></div>
+    </div>
+
+    <!-- TOP ROW -->
+    <div style="position:relative;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+      <div style="flex:1">
+        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:4px 10px;margin-bottom:16px">
+          <div style="width:5px;height:5px;border-radius:50%;background:${a1};box-shadow:0 0 6px ${a1}"></div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:${a1}">${c.tipo || 'POST'}</span>
+        </div>
+        <div style="font-size:32px;font-weight:800;line-height:1.15;letter-spacing:-1px;color:#fff;margin-bottom:10px;text-shadow:0 2px 20px rgba(0,0,0,0.6)">${c.headline || ''}</div>
+        <div style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8);font-weight:400;text-shadow:0 1px 8px rgba(0,0,0,0.5)">${c.subtitulo || ''}</div>
+      </div>
+      <!-- ICON -->
+      <div style="width:90px;height:90px;flex-shrink:0;opacity:0.85">${svgIcon}</div>
+    </div>
+
+    <!-- DIVIDER -->
+    <div style="position:relative;z-index:2;height:1px;background:linear-gradient(90deg,${a1},transparent);margin:8px 0;opacity:0.4"></div>
+
+    <!-- BOTTOM -->
+    <div style="position:relative;z-index:2">
+      <div style="display:inline-flex;align-items:center;gap:8px;background:${a1};color:#000;font-size:13px;font-weight:800;padding:12px 22px;border-radius:8px;letter-spacing:0.3px">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        ${c.cta || ''}
+      </div>
+    </div>
+
+    <!-- CORNER ACCENT -->
+    <div style="position:absolute;bottom:0;right:0;width:120px;height:120px;pointer-events:none">
+      <svg viewBox="0 0 120 120" fill="none" style="width:100%;height:100%">
+        <path d="M120 0 L120 120 L0 120" stroke="${a1}" stroke-width="1" opacity="0.15"/>
+        <path d="M120 30 L120 120 L30 120" stroke="${a1}" stroke-width="1" opacity="0.1"/>
+      </svg>
+    </div>
+  </div>`;
+}
+
+function buildSlideCard(s, idx, total, st = {}) {
+  const isCapa = s.tipo === 'capa';
+  const isCTA = s.tipo === 'cta';
+  const esquema = st.esquema || (isCapa ? 'escuro_dourado' : isCTA ? 'roxo_vibrante' : 'azul_moderno');
+  const T = getTheme(esquema);
+  const bg = st.bg || T.bg;
+  const a1 = st.accent || T.a1;
+  const a2 = st.accent2 || T.a2;
+  const txtColor = st.headlineColor || T.txt;
+  const subColor = st.captionColor || T.sub;
+
+  const numLabel = `${idx+1}/${total}`;
+
+  const capaImg = (isCapa && S.data && S.data.capaImage) ? S.data.capaImage : null;
+  const slideBgStyle = capaImg
+    ? `background:url('${capaImg}') center/cover no-repeat`
+    : `background:${T.grad}`;
+
+  return `<div style="${slideBgStyle};position:relative;overflow:hidden;font-family:'Bricolage Grotesque',sans-serif;aspect-ratio:1/1;display:flex;flex-direction:column;justify-content:space-between;padding:24px 20px;min-height:240px">
+
+    <!-- BG -->
+    <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
+      ${capaImg
+        ? `<div style="position:absolute;inset:0;background:linear-gradient(160deg,rgba(0,0,0,0.75) 0%,rgba(0,0,0,0.4) 50%,rgba(0,0,0,0.8) 100%)"></div>`
+        : `<div style="position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:${T.shape};filter:blur(30px)"></div>
+      <div style="position:absolute;bottom:-20px;left:-20px;width:120px;height:120px;border-radius:50%;background:${T.shape};filter:blur(20px)"></div>`
+      }
+    </div>
+
+    <!-- TOP -->
+    <div style="position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:${a1};opacity:0.7">${numLabel} · ${(s.tipo||'').toUpperCase()}</span>
+      ${isCapa ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${a1}" stroke-width="2.5" opacity="0.7"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>` : isCTA ? `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${a1}" stroke-width="2.5" opacity="0.7"><polyline points="22 2 15 22 11 13 2 9 22 2"/></svg>` : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${a1}" stroke-width="2" opacity="0.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`}
+    </div>
+
+    <!-- CONTENT -->
+    <div style="position:relative;z-index:2;flex:1;display:flex;flex-direction:column;justify-content:center;padding:12px 0">
+      <div style="width:28px;height:3px;border-radius:2px;background:linear-gradient(90deg,${a1},${a2});margin-bottom:12px"></div>
+      <div style="font-size:${isCapa?'18px':'15px'};font-weight:800;line-height:1.3;letter-spacing:-0.3px;color:${txtColor};margin-bottom:8px">${s.headline||''}</div>
+      <div style="font-size:11px;line-height:1.65;color:${subColor};font-weight:300">${s.corpo||''}</div>
+    </div>
+
+    <!-- BOTTOM BAR -->
+    <div style="position:relative;z-index:2;display:flex;gap:3px">
+      ${Array.from({length:total},(_,i)=>`<div style="flex:1;height:2px;border-radius:1px;background:${i===idx?a1:'rgba(255,255,255,0.15)'}"></div>`).join('')}
+    </div>
+
+    <!-- CORNER -->
+    <div style="position:absolute;bottom:0;right:0;width:80px;height:80px;pointer-events:none">
+      <svg viewBox="0 0 80 80" fill="none" style="width:100%;height:100%">
+        <path d="M80 0 L80 80 L0 80" stroke="${a1}" stroke-width="1" opacity="0.12"/>
+      </svg>
+    </div>
+  </div>`;
+}
+
+// ══ CHAT ══
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function chatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+function useHint(el) {
+  document.getElementById('chat-input').value = el.textContent;
+  document.getElementById('chat-input').focus();
+}
+
+function handleImgs(e) {
+  const files = Array.from(e.target.files);
+  files.forEach(f => {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      S.pendingImgs.push({ name: f.name, data: ev.target.result });
+      updateImgPreview();
+    };
+    reader.readAsDataURL(f);
+  });
+  e.target.value = '';
+}
+
+function updateImgPreview() {
+  const row = document.getElementById('img-preview-row');
+  row.style.display = S.pendingImgs.length ? 'flex' : 'none';
+  row.innerHTML = S.pendingImgs.map((img, i) => `
+    <div class="img-thumb">
+      <img src="${img.data}" alt="${img.name}">
+      <button class="img-thumb-rm" onclick="removeImg(${i})"><svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>`).join('');
+}
+
+function removeImg(i) {
+  S.pendingImgs.splice(i, 1);
+  updateImgPreview();
+}
+
+function addMsg(role, text, imgSrcs = []) {
+  const msgs = document.getElementById('chat-msgs');
+  const now = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+  const imgsHTML = imgSrcs.map(src => `<img class="msg-img" src="${src}" alt="referência">`).join('');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.innerHTML = `<div class="msg-bubble">${text.replace(/\n/g,'<br>')}${imgsHTML}</div><div class="msg-time">${now}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function addAIMsg(text) { addMsg('ai', text); }
+function addUserMsg(text, imgs) { addMsg('user', text, imgs); }
+
+function showTyping() {
+  const msgs = document.getElementById('chat-msgs');
+  const div = document.createElement('div');
+  div.className = 'msg ai'; div.id = 'typing-indicator';
+  div.innerHTML = '<div class="typing-bubble"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+function hideTyping() { document.getElementById('typing-indicator')?.remove(); }
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const txt = input.value.trim();
+  if (!txt && S.pendingImgs.length === 0) return;
+
+  const imgs = [...S.pendingImgs];
+  const imgSrcs = imgs.map(i => i.data);
+
+  addUserMsg(txt || '(imagem de referência)', imgSrcs);
+  input.value = ''; input.style.height = 'auto';
+  S.pendingImgs = []; updateImgPreview();
+  document.getElementById('chat-send-btn').disabled = true;
+  showTyping();
+
+  // Build context for Claude
+  const context = S.mode === 'post'
+    ? `Modo: Post Instagram. Criativo atual (índice ${S.activeIdx}):\n${JSON.stringify(S.data.criativos[S.activeIdx])}\nEstilo atual: ${JSON.stringify(S.style)}`
+    : `Modo: Carrossel Instagram. Título: "${S.data.titulo_carrossel}". Slides: ${JSON.stringify(S.data.slides)}. Caption: "${S.data.caption}". Estilo atual: ${JSON.stringify(S.style)}`;
+
+  const systemPrompt = `Você é um assistente especializado em ajustar criativos de Instagram.
+O usuário vai pedir mudanças de texto ou estilo visual.
+
+Contexto do criativo atual:
+${context}
+
+Analise o pedido e retorne um JSON com as mudanças necessárias. FORMATO OBRIGATÓRIO:
+{
+  "resposta": "mensagem amigável confirmando o que foi feito",
+  "conteudo": { /* campos alterados: "headline", "subtitulo", "caption", "cta", "hashtags" */ },
+  "estilo": { /* visuais: "bg", "accent", "accent2", "headlineColor", "captionColor", "esquema" (escuro_dourado|roxo_vibrante|azul_moderno|verde_natureza|vermelho_urgente|preto_premium), "tema_visual" (dinheiro|crescimento|alerta|tecnologia|pessoa|produto|grafico|estrela|foguete|coracao) */ }
+}
+
+Só inclua os campos que foram pedidos para alterar. Se não há mudança de estilo, retorne "estilo": {}. Se não há mudança de conteúdo, retorne "conteudo": {}.
+Responda SOMENTE o JSON, sem markdown.`;
+
+  // Build messages including image if any
+  const userContent = imgs.length > 0
+    ? [
+        ...imgs.map(img => ({ type: 'image', source: { type: 'base64', media_type: img.data.split(';')[0].split(':')[1], data: img.data.split(',')[1] } })),
+        { type: 'text', text: txt || 'Use esta imagem como referência de estilo e adapte o criativo.' }
+      ]
+    : txt;
+
+  S.chatHistory.push({ role: 'user', content: userContent });
+
+  try {
+    const raw = await callClaude(S.chatHistory, systemPrompt);
+    const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+
+    // Apply changes
+    if (parsed.conteudo && Object.keys(parsed.conteudo).length > 0) {
+      if (S.mode === 'post') {
+        Object.assign(S.data.criativos[S.activeIdx], parsed.conteudo);
+      } else {
+        if (parsed.conteudo.slides) S.data.slides = parsed.conteudo.slides;
+        if (parsed.conteudo.caption) S.data.caption = parsed.conteudo.caption;
+        if (parsed.conteudo.titulo_carrossel) S.data.titulo_carrossel = parsed.conteudo.titulo_carrossel;
+      }
+    }
+    if (parsed.estilo && Object.keys(parsed.estilo).length > 0) {
+      Object.assign(S.style, parsed.estilo);
+    }
+
+    S.chatHistory.push({ role: 'assistant', content: parsed.resposta || 'Feito!' });
+
+    // Refresh preview with animation
+    const pvCard = document.getElementById('criativo-render') || document.getElementById('carr-render');
+    pvCard?.classList.add('refreshing');
+    setTimeout(() => { renderPreview(); }, 200);
+
+    hideTyping();
+    addAIMsg(parsed.resposta || 'Pronto! O que mais quer ajustar?');
+  } catch(e) {
+    console.error(e);
+    hideTyping();
+    addAIMsg('Houve um erro ao processar. Pode tentar de novo?');
+  }
+
+  document.getElementById('chat-send-btn').disabled = false;
+}
+
+// ══ DOWNLOAD ══
+async function captureElement(el, bg = '#0f0f16') {
+  return await html2canvas(el, { backgroundColor: bg, scale: 2, useCORS: true, logging: false });
+}
+
+async function dlPostPNG() {
+  const el = document.getElementById('criativo-render');
+  if (!el) return;
+  const canvas = await captureElement(el, S.style.bg || '#0f0f16');
+  const a = document.createElement('a'); a.href = canvas.toDataURL('image/png'); a.download = 'criativo.png'; a.click();
+}
+
+function dlPostHTML() {
+  const c = S.data.criativos[S.activeIdx];
+  const html = buildStandaloneHTML('Post — ' + c.headline, buildCriativoCard(c, S.style));
+  dlFile(html, 'criativo.html', 'text/html');
+}
+
+async function dlCarrZIP() {
+  const zip = new JSZip();
+  const f = zip.folder('carrossel');
+  const slides = S.data.slides || [];
+  for (let i = 0; i < slides.length; i++) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed;left:-9999px;top:0;width:340px;';
+    wrap.innerHTML = buildSlideCard(slides[i], i, slides.length, S.style);
+    document.body.appendChild(wrap);
+    const el = wrap.firstElementChild;
+    const canvas = await captureElement(el, S.style.bg || '#0f0f16');
+    f.file(`slide-${String(i+1).padStart(2,'0')}.png`, canvas.toDataURL('image/png').split(',')[1], {base64:true});
+    document.body.removeChild(wrap);
+  }
+  f.file('legenda.txt', S.data.caption || '');
+  const blob = await zip.generateAsync({type:'blob'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'carrossel.zip'; a.click();
+}
+
+function dlCarrHTML() {
+  const slides = S.data.slides || [];
+  const body = slides.map((s,i) => buildSlideCard(s, i, slides.length, S.style)).join('');
+  const cap = S.data.caption || '';
+  const hi = cap.lastIndexOf('#');
+  const capText = hi > 0 ? cap.substring(0,hi).trim() : cap;
+  const hashText = hi > 0 ? cap.substring(hi) : '';
+  const extra = `<div style="background:#0f0f16;border:1px solid #232330;border-radius:12px;padding:20px;margin-top:16px;max-width:760px;"><div style="font-family:monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#5a5a72;margin-bottom:10px">Legenda</div><p style="font-size:13px;line-height:1.8;color:#9898b0;font-weight:300;" contenteditable="true">${capText.replace(/\n/g,'<br>')}</p><p style="font-family:monospace;font-size:10px;color:rgba(193,71,255,0.7);line-height:1.8;margin-top:8px" contenteditable="true">${hashText}</p></div>`;
+  const html = buildStandaloneHTML(S.data.titulo_carrossel || 'Carrossel', `<div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:0">${body}</div>${extra}`);
+  dlFile(html, 'carrossel.html', 'text/html');
+}
+
+function buildStandaloneHTML(title, bodyContent) {
+  const S_TAG = '<' + 'style>';
+  const ES_TAG = '</' + 'style>';
+  const EH_TAG = '</' + 'head>';
+  const EB_TAG = '</' + 'body>';
+  const EHTML_TAG = '</' + 'html>';
+  const css = `*{margin:0;padding:0;box-sizing:border-box}body{background:#08080d;min-height:100vh;padding:40px 24px;display:flex;flex-direction:column;align-items:flex-start}
+.criativo-card,.slide-card{font-family:'Bricolage Grotesque',sans-serif}
+.cc-grid-bg,.sc-grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(232,255,71,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(232,255,71,0.02) 1px,transparent 1px);background-size:28px 28px;pointer-events:none}
+.criativo-card{padding:36px 32px;min-height:380px;position:relative;max-width:600px;border-radius:14px;border:1px solid #232330}
+.cc-accent{height:3px;width:44px;border-radius:2px;margin-bottom:18px;position:relative;z-index:1;background:linear-gradient(90deg,var(--cc-accent,#e8ff47),var(--cc-accent2,#47ffce))}
+.cc-tag{font-family:monospace;font-size:9px;letter-spacing:2px;text-transform:uppercase;padding:3px 9px;border-radius:4px;display:inline-block;margin-bottom:14px;position:relative;z-index:1;color:var(--cc-tag-color,#e8ff47);border:1px solid;border-color:rgba(232,255,71,0.25);background:rgba(232,255,71,0.08)}
+.cc-headline{font-size:24px;font-weight:800;line-height:1.3;letter-spacing:-0.4px;margin-bottom:13px;position:relative;z-index:1;color:var(--cc-headline,#f2f2ff);outline:none}
+.cc-caption{font-size:13px;line-height:1.8;font-weight:300;margin-bottom:14px;position:relative;z-index:1;color:var(--cc-caption,#9898b0);outline:none}
+.cc-cta{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:8px 15px;border-radius:8px;margin-bottom:14px;position:relative;z-index:1;color:var(--cc-cta-color,#47ffce);border:1px solid rgba(71,255,206,0.25);background:rgba(71,255,206,0.08);outline:none}
+.cc-hashtags{font-family:monospace;font-size:10px;line-height:1.8;position:relative;z-index:1;opacity:0.7;color:rgba(193,71,255,0.8);outline:none}
+.slide-card{padding:26px 22px;min-height:280px;position:relative;width:240px;border-radius:12px;border:1px solid #232330}
+.sc-num{font-family:monospace;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:#5a5a72;margin-bottom:14px;position:relative;z-index:1}
+.sc-bar{width:28px;height:3px;border-radius:2px;margin-bottom:14px;position:relative;z-index:1}
+.sc-headline{font-size:16px;font-weight:800;line-height:1.35;margin-bottom:9px;position:relative;z-index:1;outline:none}
+.sc-body{font-size:11px;line-height:1.65;font-weight:300;position:relative;z-index:1;outline:none}
+[contenteditable]:hover{background:rgba(255,255,255,0.03);border-radius:4px}
+[contenteditable]:focus{outline:none;background:rgba(255,255,255,0.06);box-shadow:0 0 0 1px rgba(232,255,71,0.2);border-radius:4px}
+.edit-hint{font-family:monospace;font-size:10px;color:#5a5a72;margin-bottom:20px;letter-spacing:1px}`;
+  const editedBody = bodyContent.replace(/class="(cc-headline|cc-caption|cc-cta|cc-hashtags|sc-headline|sc-body)"/g, 'class="$1" contenteditable="true"');
+  return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>' + title + '</title>\n'
+    + '<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@300;400;800&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">\n'
+    + S_TAG + css + ES_TAG + '\n' + EH_TAG + '\n<body>\n'
+    + '<p class="edit-hint">↑ Clique em qualquer texto para editar</p>\n'
+    + editedBody + '\n' + EB_TAG + EHTML_TAG;
+}
+
+function dlFile(content, name, type) {
+  const a = document.createElement('a');
+  a.href = 'data:' + type + ';charset=utf-8,' + encodeURIComponent(content);
+  a.download = name; a.click();
+}
+
+// ══ DOWNLOAD PAGE ══
+function buildDLPage() {
+  const el = document.getElementById('dl-options-list');
+  if (S.mode === 'post') {
+    el.innerHTML = `
+      <div class="dl-opt">
+        <div class="dl-opt-icon" style="background:rgba(71,255,206,0.1)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#47ffce" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+        <div class="dl-opt-info"><div class="dl-opt-name">Imagem PNG</div><div class="dl-opt-desc">Pronta para postar no Instagram. Alta resolução 2x.</div></div>
+        <button class="dl-btn a" onclick="dlPostPNG()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Baixar PNG</button>
+      </div>
+      <div class="dl-opt">
+        <div class="dl-opt-icon" style="background:rgba(232,255,71,0.1)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e8ff47" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <div class="dl-opt-info"><div class="dl-opt-name">HTML Editável</div><div class="dl-opt-desc">Abre no navegador. Clique em qualquer texto para editar antes de exportar.</div></div>
+        <button class="dl-btn b" onclick="dlPostHTML()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Baixar HTML</button>
+      </div>`;
+  } else {
+    el.innerHTML = `
+      <div class="dl-opt">
+        <div class="dl-opt-icon" style="background:rgba(255,107,71,0.1)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff6b47" stroke-width="2"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 001 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/></svg></div>
+        <div class="dl-opt-info"><div class="dl-opt-name">ZIP — Slides individuais</div><div class="dl-opt-desc">Cada slide como PNG separado + legenda.txt. Ideal para postar no Instagram.</div></div>
+        <button class="dl-btn c" onclick="dlCarrZIP()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Baixar ZIP</button>
+      </div>
+      <div class="dl-opt">
+        <div class="dl-opt-icon" style="background:rgba(232,255,71,0.1)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#e8ff47" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+        <div class="dl-opt-info"><div class="dl-opt-name">HTML Editável</div><div class="dl-opt-desc">Todos os slides em um arquivo. Edite textos diretamente no navegador.</div></div>
+        <button class="dl-btn b" onclick="dlCarrHTML()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Baixar HTML</button>
+      </div>`;
+  }
+}
+
+function saveKey(type, val) {
+  val = (val || '').trim();
+  if (!val.startsWith('sk-')) return;
+  if (type === 'anthropic') {
+    localStorage.setItem('orbit_key_anthropic', val);
+    const ok = document.getElementById('key-ok-ant');
+    if (ok) ok.style.display = 'inline';
+  } else if (type === 'openai') {
+    localStorage.setItem('orbit_key_openai', val);
+    const ok = document.getElementById('key-ok-oai');
+    if (ok) ok.style.display = 'inline';
+  }
+}
+// Restore saved keys on load
+(function(){
+  const ant = localStorage.getItem('orbit_key_anthropic');
+  if (ant) {
+    const inp = document.getElementById('apikey-inp');
+    if (inp) inp.value = ant;
+    const ok = document.getElementById('key-ok-ant');
+    if (ok) ok.style.display = 'inline';
+  }
+  const oai = localStorage.getItem('orbit_key_openai');
+  if (oai) {
+    const inp = document.getElementById('openai-inp');
+    if (inp) inp.value = oai;
+    const ok = document.getElementById('key-ok-oai');
+    if (ok) ok.style.display = 'inline';
+  }
+})();
+</script>
+</body>
+</html>
