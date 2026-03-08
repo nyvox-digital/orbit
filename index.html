@@ -296,6 +296,19 @@ select option{background:#17171f}
 .back-link{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--dim);cursor:pointer;transition:color 0.15s;margin-top:20px}
 .back-link:hover{color:var(--snow)}
 
+/* ── PHOTO UPLOAD ── */
+.photo-upload-zone{border:2px dashed var(--wire2);border-radius:14px;padding:32px 20px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--ink3);position:relative;overflow:hidden}
+.photo-upload-zone:hover{border-color:var(--neon);background:rgba(232,255,71,0.02)}
+.photo-upload-zone.has-photo{padding:0;border-style:solid;border-color:rgba(232,255,71,0.3)}
+.photo-upload-empty{display:flex;flex-direction:column;align-items:center;gap:10px;pointer-events:none}
+.photo-upload-icon{width:44px;height:44px;border-radius:12px;background:var(--ink4);border:1px solid var(--wire2);display:flex;align-items:center;justify-content:center;margin:0 auto}
+.photo-upload-text{font-size:13px;font-weight:600;color:var(--pale)}
+.photo-upload-sub{font-size:11px;color:var(--dim);max-width:260px;line-height:1.5}
+.photo-preview-wrap{position:relative}
+.photo-preview-img{width:100%;max-height:220px;object-fit:contain;border-radius:12px;display:block}
+.photo-preview-rm{position:absolute;top:10px;right:10px;background:rgba(8,8,13,0.8);border:1px solid var(--wire2);border-radius:50%;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--neon3);transition:all 0.15s}
+.photo-preview-rm:hover{background:rgba(255,107,71,0.15);border-color:var(--neon3)}
+
 /* ── RESPONSIVE ── */
 
 /* Tablet (≤900px) */
@@ -450,6 +463,23 @@ select option{background:#17171f}
 
       <!-- FORM CARD -->
       <div class="form-card">
+
+        <!-- FOTO DO PRODUTO -->
+        <div class="form-section">
+          <div class="fs-label">00 · Foto do produto <span style="font-size:8px;color:var(--dim);font-style:normal;text-transform:none;letter-spacing:0;font-weight:400">(opcional — eleva muito o visual)</span></div>
+          <div class="photo-upload-zone" id="photo-upload-zone" onclick="triggerPhotoUpload()">
+            <div id="photo-preview-container">
+              <div class="photo-upload-empty" id="photo-empty-state">
+                <div class="photo-upload-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--pale)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                </div>
+                <div class="photo-upload-text">Foto do produto ou serviço</div>
+                <div class="photo-upload-sub">Clique para selecionar · PNG com fundo transparente fica incrível</div>
+              </div>
+            </div>
+          </div>
+          <input type="file" id="product-photo-input" accept="image/*" style="display:none" onchange="handleProductPhoto(event)">
+        </div>
 
         <!-- IDENTIDADE -->
         <div class="form-section">
@@ -680,6 +710,7 @@ const S = {
   pendingImgs: [],    // base64 images for chat
   chatHistory: [],    // [{role,content}]
   activeIdx: 0,       // active post criativo index
+  productPhoto: null, // base64 user-uploaded product photo
 };
 
 // ══ INIT INTERACTIONS ══
@@ -962,69 +993,120 @@ function getSVG(tema, accentColor) {
 // ══ BUILD CARD HTML ══
 function buildCriativoCard(c, st = {}) {
   const esquema = st.esquema || c.esquema || 'escuro_dourado';
-  const tema = st.tema_visual || c.tema_visual || 'estrela';
   const T = getTheme(esquema);
-  const bg = st.bg || T.bg;
   const a1 = st.accent || T.a1;
   const a2 = st.accent2 || T.a2;
-  const txtColor = st.headlineColor || T.txt;
-  const subColor = st.captionColor || T.sub;
-
-  const svgIcon = getSVG(tema, a1);
-
-  const bgImg = c.bgImage || st.bgImage || null;
-  const bgStyle = bgImg
-    ? `background:url('${bgImg}') center/cover no-repeat`
-    : `background:${T.grad}`;
-
   const fmt = document.getElementById('f-formato')?.value || 'feed_estatico';
-  const cardAR = fmt === 'stories' ? '9/16' : '4/5';
-  const cardPad = fmt === 'stories' ? '40px 32px' : '32px 28px';
+  const isStory = fmt === 'stories';
+  const cardAR = isStory ? '9/16' : '4/5';
+  const hasUserPhoto = !!S.productPhoto;
+  const productImg = S.productPhoto || c.bgImage || st.bgImage || null;
+  const layouts = ['split', 'frame', 'poster'];
+  const layout = st.layout || layouts[S.activeIdx % 3];
+  if (layout === 'split')  return buildLayoutSplit(c, T, a1, a2, productImg, hasUserPhoto, cardAR, isStory);
+  if (layout === 'frame')  return buildLayoutFrame(c, T, a1, a2, productImg, hasUserPhoto, cardAR, isStory);
+  return buildLayoutPoster(c, T, a1, a2, productImg, hasUserPhoto, cardAR, isStory);
+}
 
-  return `<div style="${bgStyle};position:relative;overflow:hidden;font-family:'Bricolage Grotesque',sans-serif;aspect-ratio:${cardAR};display:flex;flex-direction:column;justify-content:space-between;padding:${cardPad};min-height:340px">
-
-    <!-- BG OVERLAY -->
-    <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
-      ${bgImg
-        ? `<div style="position:absolute;inset:0;background:linear-gradient(160deg,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.45) 50%,rgba(0,0,0,0.75) 100%)"></div>`
-        : `<div style="position:absolute;top:-60px;right:-60px;width:280px;height:280px;border-radius:50%;background:${T.shape};filter:blur(40px)"></div>
-      <div style="position:absolute;bottom:-40px;left:-40px;width:200px;height:200px;border-radius:50%;background:${T.shape};filter:blur(30px)"></div>`
-      }
-      <div style="position:absolute;top:0;left:0;right:0;bottom:0;background-image:linear-gradient(rgba(255,255,255,0.01) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.01) 1px,transparent 1px);background-size:32px 32px"></div>
-    </div>
-
-    <!-- TOP ROW -->
-    <div style="position:relative;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
-      <div style="flex:1">
-        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:4px 10px;margin-bottom:16px">
-          <div style="width:5px;height:5px;border-radius:50%;background:${a1};box-shadow:0 0 6px ${a1}"></div>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:${a1}">${c.tipo || 'POST'}</span>
-        </div>
-        <div style="font-size:32px;font-weight:800;line-height:1.15;letter-spacing:-1px;color:#fff;margin-bottom:10px;text-shadow:0 2px 20px rgba(0,0,0,0.6)">${c.headline || ''}</div>
-        <div style="font-size:14px;line-height:1.6;color:rgba(255,255,255,0.8);font-weight:400;text-shadow:0 1px 8px rgba(0,0,0,0.5)">${c.subtitulo || ''}</div>
+function buildLayoutSplit(c, T, a1, a2, productImg, hasUserPhoto, cardAR, isStory) {
+  const fz = isStory ? '56px' : '48px';
+  const pad = isStory ? '44px 36px' : '32px 28px';
+  const padBL = isStory ? '36px' : '28px';
+  const padBT = isStory ? '20px' : '16px';
+  const padBB = isStory ? '44px' : '28px';
+  const tr = isStory ? '44px' : '32px';
+  const tr2 = isStory ? '36px' : '28px';
+  const maxW = isStory ? '340px' : '260px';
+  const imgHtml = productImg
+    ? (hasUserPhoto
+      ? `<div style="position:absolute;left:50%;top:26%;transform:translate(-50%,-26%);width:76%;z-index:3;pointer-events:none"><img src="${productImg}" style="width:100%;filter:drop-shadow(0 28px 60px rgba(0,0,0,0.72))"></div>`
+      : `<div style="position:absolute;inset:0;background:url('${productImg}') center/cover no-repeat;z-index:1"></div><div style="position:absolute;inset:0;background:linear-gradient(160deg,rgba(0,0,0,0.8) 0%,rgba(0,0,0,0.48) 50%,rgba(0,0,0,0.82) 100%);z-index:2"></div>`)
+    : `<div style="position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);width:180px;height:180px;opacity:0.18;z-index:2">${getSVG(c.tema_visual||'estrela',a1)}</div><div style="position:absolute;top:-80px;right:-80px;width:320px;height:320px;border-radius:50%;background:${T.shape};filter:blur(60px);z-index:1"></div><div style="position:absolute;bottom:-60px;left:-60px;width:240px;height:240px;border-radius:50%;background:${T.shape};filter:blur(50px);z-index:1"></div>`;
+  return `<div style="position:relative;overflow:hidden;font-family:'Bricolage Grotesque',sans-serif;aspect-ratio:${cardAR};background:${T.bg}">
+    <div style="position:absolute;inset:0;background:${T.grad}"></div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:40%;background:${a1};clip-path:ellipse(130% 100% at 50% 100%)"></div>
+    <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px);background-size:36px 36px;pointer-events:none;z-index:1"></div>
+    ${imgHtml}
+    <div style="position:relative;z-index:5;padding:${pad}">
+      <div style="display:inline-flex;align-items:center;gap:7px;background:rgba(0,0,0,0.45);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.12);border-radius:99px;padding:6px 14px;margin-bottom:${isStory?'22px':'18px'}">
+        <div style="width:6px;height:6px;border-radius:50%;background:${a1};box-shadow:0 0 10px ${a1}"></div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:${a1}">${c.tipo||'DESTAQUE'}</span>
       </div>
-      <!-- ICON -->
-      <div style="width:90px;height:90px;flex-shrink:0;opacity:0.85">${svgIcon}</div>
+      <div style="font-size:${fz};font-weight:900;line-height:1.0;letter-spacing:-2.5px;color:#fff;text-shadow:0 4px 30px rgba(0,0,0,0.5);max-width:${maxW}">${c.headline||''}</div>
     </div>
+    <div style="position:absolute;bottom:0;left:0;right:0;z-index:5;padding:${padBT} ${padBL} ${padBB}">
+      <div style="font-size:13px;font-weight:600;color:rgba(0,0,0,0.82);line-height:1.45;margin-bottom:16px;max-width:230px">${c.subtitulo||''}</div>
+      <div style="display:inline-flex;align-items:center;gap:9px;background:rgba(0,0,0,0.9);color:${a1};font-size:13px;font-weight:800;padding:13px 24px;border-radius:10px;letter-spacing:0.5px;box-shadow:0 8px 28px rgba(0,0,0,0.35)">${c.cta||''}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+    </div>
+    <div style="position:absolute;top:${tr};right:${tr2};z-index:5">
+      <div style="background:${a1};color:rgba(0,0,0,0.85);font-size:9px;font-weight:800;letter-spacing:1.5px;padding:6px 14px;border-radius:99px;text-transform:uppercase">${(c.tipo||'DESTAQUE').toUpperCase()}</div>
+    </div>
+    <div style="position:absolute;top:0;left:0;z-index:4;pointer-events:none"><svg width="72" height="72" viewBox="0 0 72 72" fill="none"><path d="M0 0 L72 0 L0 72" stroke="${a1}" stroke-width="1.5" opacity="0.18"/></svg></div>
+  </div>`;
+}
 
-    <!-- DIVIDER -->
-    <div style="position:relative;z-index:2;height:1px;background:linear-gradient(90deg,${a1},transparent);margin:8px 0;opacity:0.4"></div>
-
-    <!-- BOTTOM -->
-    <div style="position:relative;z-index:2">
-      <div style="display:inline-flex;align-items:center;gap:8px;background:${a1};color:#000;font-size:13px;font-weight:800;padding:12px 22px;border-radius:8px;letter-spacing:0.3px">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-        ${c.cta || ''}
+function buildLayoutFrame(c, T, a1, a2, productImg, hasUserPhoto, cardAR, isStory) {
+  const fz = isStory ? '40px' : '34px';
+  const padL = isStory ? '44px 28px 44px 36px' : '32px 24px 32px 28px';
+  const imgHtml = productImg
+    ? (hasUserPhoto
+      ? `<div style="position:absolute;right:-8%;top:50%;transform:translateY(-50%);width:58%;z-index:3;pointer-events:none"><img src="${productImg}" style="width:100%;filter:drop-shadow(-22px 22px 50px rgba(0,0,0,0.75))"></div>`
+      : `<div style="position:absolute;right:0;top:0;bottom:0;width:55%;background:url('${productImg}') center/cover no-repeat;z-index:2"></div><div style="position:absolute;right:0;top:0;bottom:0;width:55%;background:linear-gradient(90deg,${T.bg} 0%,transparent 40%,rgba(0,0,0,0.3) 100%);z-index:3"></div>`)
+    : `<div style="position:absolute;right:5%;top:50%;transform:translateY(-50%);width:150px;height:150px;opacity:0.45;z-index:3">${getSVG(c.tema_visual||'produto',a1)}</div><div style="position:absolute;right:0;top:0;bottom:0;width:45%;background:radial-gradient(ellipse at 80% 50%,${T.shape},transparent);z-index:2"></div>`;
+  return `<div style="position:relative;overflow:hidden;font-family:'Bricolage Grotesque',sans-serif;aspect-ratio:${cardAR};background:${T.bg}">
+    <div style="position:absolute;inset:0;background:${T.grad}"></div>
+    ${imgHtml}
+    <div style="position:absolute;left:52%;top:8%;bottom:8%;width:1px;background:linear-gradient(180deg,transparent,${a1},transparent);opacity:0.2;z-index:4"></div>
+    <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;z-index:1"></div>
+    <div style="position:relative;z-index:5;display:flex;flex-direction:column;justify-content:space-between;height:100%;padding:${padL};width:56%">
+      <div>
+        <div style="width:40px;height:4px;background:linear-gradient(90deg,${a1},${a2});border-radius:2px;margin-bottom:20px"></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:${a1};margin-bottom:14px;opacity:0.9">${c.tipo||'DESTAQUE'}</div>
+        <div style="font-size:${fz};font-weight:900;line-height:1.08;letter-spacing:-1.5px;color:#fff;margin-bottom:14px">${c.headline||''}</div>
+        <div style="font-size:13px;line-height:1.65;color:rgba(255,255,255,0.6);font-weight:300">${c.subtitulo||''}</div>
+      </div>
+      <div>
+        <div style="display:inline-flex;align-items:center;gap:8px;background:${a1};color:rgba(0,0,0,0.9);font-size:12px;font-weight:800;padding:13px 22px;border-radius:10px;letter-spacing:0.5px;box-shadow:0 8px 30px ${a1}44;margin-bottom:16px">${c.cta||''}<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(255,255,255,0.25);letter-spacing:0.5px">${c.hashtags ? c.hashtags.split(' ').slice(0,3).join(' ') : ''}</div>
       </div>
     </div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:70px;background:linear-gradient(transparent,rgba(0,0,0,0.35));z-index:4;pointer-events:none"></div>
+  </div>`;
+}
 
-    <!-- CORNER ACCENT -->
-    <div style="position:absolute;bottom:0;right:0;width:120px;height:120px;pointer-events:none">
-      <svg viewBox="0 0 120 120" fill="none" style="width:100%;height:100%">
-        <path d="M120 0 L120 120 L0 120" stroke="${a1}" stroke-width="1" opacity="0.15"/>
-        <path d="M120 30 L120 120 L30 120" stroke="${a1}" stroke-width="1" opacity="0.1"/>
-      </svg>
+function buildLayoutPoster(c, T, a1, a2, productImg, hasUserPhoto, cardAR, isStory) {
+  const fz = isStory ? '64px' : '52px';
+  const pad = isStory ? '44px 36px' : '32px 28px';
+  const pv = isStory ? '32px 0' : '22px 0';
+  const words = (c.headline||'').split(' ');
+  const firstWord = words[0]||'';
+  const restWords = words.slice(1).join(' ');
+  const imgBgHtml = productImg && !hasUserPhoto
+    ? `<div style="position:absolute;right:-10%;bottom:0;width:70%;z-index:2;opacity:0.4;pointer-events:none"><img src="${productImg}" style="width:100%"><div style="position:absolute;inset:0;background:linear-gradient(180deg,${T.bg} 0%,transparent 35%,${T.bg} 88%)"></div></div>`
+    : productImg && hasUserPhoto
+    ? `<div style="position:absolute;right:-5%;bottom:4%;width:52%;z-index:2;opacity:0.45;pointer-events:none"><img src="${productImg}" style="width:100%;filter:drop-shadow(0 20px 40px rgba(0,0,0,0.8))"></div>`
+    : `<div style="position:absolute;right:24px;bottom:32px;width:100px;height:100px;opacity:0.1;z-index:2">${getSVG(c.tema_visual||'estrela',a1)}</div>`;
+  return `<div style="position:relative;overflow:hidden;font-family:'Bricolage Grotesque',sans-serif;aspect-ratio:${cardAR};background:${T.bg}">
+    <div style="position:absolute;inset:0;background:${T.grad}"></div>
+    <div style="position:absolute;top:-80px;right:-80px;width:300px;height:300px;border-radius:50%;background:${T.shape};filter:blur(60px);z-index:1"></div>
+    <div style="position:absolute;bottom:-60px;left:-60px;width:220px;height:220px;border-radius:50%;background:${T.shape};filter:blur(50px);z-index:1"></div>
+    ${imgBgHtml}
+    <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px);background-size:32px 32px;z-index:2;pointer-events:none"></div>
+    <div style="position:relative;z-index:5;display:flex;flex-direction:column;justify-content:space-between;height:100%;padding:${pad}">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="height:3px;width:32px;background:linear-gradient(90deg,${a1},${a2});border-radius:2px"></div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:${a1};opacity:0.9">${c.tipo||'DESTAQUE'}</span>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:${pv}">
+        <div style="font-size:${fz};font-weight:900;line-height:0.95;letter-spacing:-2.5px;color:#fff;margin-bottom:20px"><span style="background:${a1};color:rgba(0,0,0,0.88);padding:3px 12px;border-radius:7px;display:inline">${firstWord}</span>${restWords ? `<br><span style="color:#fff">${restWords}</span>` : ''}</div>
+        <div style="font-size:14px;line-height:1.65;color:rgba(255,255,255,0.55);font-weight:300;max-width:280px">${c.subtitulo||''}</div>
+      </div>
+      <div>
+        <div style="display:inline-flex;align-items:center;gap:9px;color:${a1};font-size:13px;font-weight:800;padding:12px 22px;border-radius:10px;border:2px solid ${a1};letter-spacing:0.5px;margin-bottom:14px">${c.cta||''}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(255,255,255,0.2);letter-spacing:0.5px;line-height:1.8">${c.hashtags ? c.hashtags.split(' ').slice(0,4).join(' ') : ''}</div>
+      </div>
     </div>
+    <div style="position:absolute;bottom:0;right:0;z-index:4;pointer-events:none"><svg width="90" height="90" viewBox="0 0 90 90" fill="none"><path d="M90 0 L90 90 L0 90" stroke="${a1}" stroke-width="1.5" opacity="0.18"/><path d="M90 25 L90 90 L25 90" stroke="${a2}" stroke-width="1" opacity="0.1"/></svg></div>
   </div>`;
 }
 
@@ -1127,6 +1209,41 @@ function removeImg(i) {
   updateImgPreview();
 }
 
+function triggerPhotoUpload() {
+  document.getElementById('product-photo-input').click();
+}
+
+function handleProductPhoto(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    S.productPhoto = ev.target.result;
+    renderProductPhotoUI();
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function renderProductPhotoUI() {
+  const zone = document.getElementById('photo-upload-zone');
+  const container = document.getElementById('photo-preview-container');
+  if (!zone || !container) return;
+  if (S.productPhoto) {
+    zone.classList.add('has-photo');
+    container.innerHTML = `<div class="photo-preview-wrap"><img class="photo-preview-img" src="${S.productPhoto}"><button class="photo-preview-rm" onclick="clearProductPhoto(event)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>`;
+  } else {
+    zone.classList.remove('has-photo');
+    container.innerHTML = `<div class="photo-upload-empty" id="photo-empty-state"><div class="photo-upload-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--pale)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div><div class="photo-upload-text">Foto do produto ou serviço</div><div class="photo-upload-sub">Clique para selecionar · PNG com fundo transparente fica incrível</div></div>`;
+  }
+}
+
+function clearProductPhoto(e) {
+  e.stopPropagation();
+  S.productPhoto = null;
+  renderProductPhotoUI();
+}
+
 function addMsg(role, text, imgSrcs = []) {
   const msgs = document.getElementById('chat-msgs');
   const now = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
@@ -1180,7 +1297,7 @@ Analise o pedido e retorne um JSON com as mudanças necessárias. FORMATO OBRIGA
 {
   "resposta": "mensagem amigável confirmando o que foi feito",
   "conteudo": { /* campos alterados: "headline", "subtitulo", "caption", "cta", "hashtags" */ },
-  "estilo": { /* visuais: "bg", "accent", "accent2", "headlineColor", "captionColor", "esquema" (escuro_dourado|roxo_vibrante|azul_moderno|verde_natureza|vermelho_urgente|preto_premium), "tema_visual" (dinheiro|crescimento|alerta|tecnologia|pessoa|produto|grafico|estrela|foguete|coracao) */ }
+  "estilo": { /* visuais: "bg", "accent", "accent2", "esquema" (escuro_dourado|roxo_vibrante|azul_moderno|verde_natureza|vermelho_urgente|preto_premium), "tema_visual" (dinheiro|crescimento|alerta|tecnologia|pessoa|produto|grafico|estrela|foguete|coracao), "layout" (split|frame|poster) */ }
 }
 
 Só inclua os campos que foram pedidos para alterar. Se não há mudança de estilo, retorne "estilo": {}. Se não há mudança de conteúdo, retorne "conteudo": {}.
