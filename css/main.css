@@ -86,9 +86,9 @@ body::after {
 .topbar-left { display: flex; align-items: center; gap: 10px; }
 .topbar-right { display: flex; align-items: center; }
 
-/* Hamburger — only mobile */
+/* Hamburger — visível em todas as telas */
 .mobile-menu-btn {
-  display: none;
+  display: flex;
   width: 34px; height: 34px;
   border-radius: 8px;
   border: 1px solid var(--border2);
@@ -142,17 +142,25 @@ body::after {
 }
 
 /* ══════════════════════════════════
-   HISTORY PANEL
+   HISTORY PANEL — sempre drawer
 ══════════════════════════════════ */
 
 .history-panel {
+  position: fixed;
+  top: var(--topbar-h); left: 0;
   width: var(--hist-w);
-  flex-shrink: 0;
+  height: calc(100dvh - var(--topbar-h));
+  z-index: 95;
   display: flex; flex-direction: column;
   background: var(--bg2);
   border-right: 1px solid var(--border);
   overflow: hidden;
+  transform: translateX(-100%);
   transition: transform .25s ease;
+}
+.history-panel.open {
+  transform: translateX(0);
+  box-shadow: 4px 0 32px rgba(0,0,0,.6);
 }
 
 .history-header {
@@ -210,21 +218,23 @@ body::after {
 }
 .conv-date { font-size: 10px; color: var(--text3); margin-top: 2px; }
 
-/* Mobile overlay */
+/* Overlay — aparece atrás do drawer em todas as telas */
 .history-overlay {
   display: none;
   position: fixed; inset: 0; z-index: 90;
-  background: rgba(0,0,0,.6);
+  background: rgba(0,0,0,.55);
   backdrop-filter: blur(4px);
 }
+.history-overlay.visible { display: block; }
 
 /* ══════════════════════════════════
    CHAT PANEL
 ══════════════════════════════════ */
 
 .chat-panel {
-  width: var(--chat-w);
-  flex-shrink: 0;
+  flex: 0 0 45%;
+  min-width: 320px;
+  max-width: 560px;
   display: flex; flex-direction: column;
   border-right: 1px solid var(--border);
   background: var(--bg2);
@@ -374,28 +384,11 @@ body::after {
 ══════════════════════════════════ */
 
 @media (max-width: 768px) {
-  :root { --hist-w: 280px; }
-
-  .mobile-menu-btn { display: flex; }
-  .mobile-tabs     { display: flex; }
-  .footer-hint     { display: none; }
-
-  /* History: slides from left as drawer */
-  .history-panel {
-    position: fixed;
-    top: var(--topbar-h); left: 0;
-    height: calc(100dvh - var(--topbar-h));
-    z-index: 95;
-    transform: translateX(-100%);
-  }
-  .history-panel.open {
-    transform: translateX(0);
-    box-shadow: 4px 0 32px rgba(0,0,0,.6);
-  }
-  .history-overlay.visible { display: block; }
+  .mobile-tabs { display: flex; }
+  .footer-hint { display: none; }
 
   /* Chat: full width */
-  .chat-panel { width: 100%; border-right: none; }
+  .chat-panel { flex: 1; max-width: 100%; border-right: none; }
 
   /* Preview: hidden by default, shown via tab */
   .preview-panel {
@@ -405,10 +398,4 @@ body::after {
     z-index: 50;
   }
   .preview-panel.mobile-visible { display: flex; flex-direction: column; }
-}
-
-/* Medium: hide history panel */
-@media (max-width: 1100px) and (min-width: 769px) {
-  .history-panel { display: none; }
-  .chat-panel    { width: 360px; }
 }
