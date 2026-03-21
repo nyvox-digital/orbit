@@ -16,8 +16,12 @@
   <!-- ── TOP BAR ── -->
   <header class="topbar">
     <div class="topbar-left">
-      <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="App.toggleHistory()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <button class="menu-btn" onclick="App.toggleHistory()" title="Histórico">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6"  x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
       </button>
       <div class="logo">
         <div class="logo-icon">
@@ -36,27 +40,17 @@
         <span class="logo-badge">IA</span>
       </div>
     </div>
-    <div class="topbar-right">
-      <div class="mobile-tabs" id="mobile-tabs">
-        <button class="mob-tab active" id="tab-chat" onclick="App.mobileTab('chat')">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-          Chat
-        </button>
-        <button class="mob-tab" id="tab-preview" onclick="App.mobileTab('preview')">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/><path d="M21 15l-5-5L5 21"/></svg>
-          Arte
-        </button>
-      </div>
-    </div>
   </header>
 
-  <div class="workspace">
+  <div class="workspace" id="workspace">
 
-    <!-- ── LEFT: HISTORY ── -->
+    <!-- ── HISTORY DRAWER ── -->
     <aside class="history-panel" id="history-panel">
       <div class="history-header">
         <button class="new-conv-btn" onclick="App.newSession()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
           Nova conversa
         </button>
       </div>
@@ -65,10 +59,9 @@
         <div class="conv-empty">Nenhuma conversa ainda</div>
       </div>
     </aside>
-
     <div class="history-overlay" id="history-overlay" onclick="App.toggleHistory()"></div>
 
-    <!-- ── CENTER: CHAT ── -->
+    <!-- ── CHAT (full width default) ── -->
     <section class="chat-panel" id="chat-panel">
       <div class="msgs" id="msgs"></div>
       <footer class="chat-footer">
@@ -92,71 +85,52 @@
       </footer>
     </section>
 
-    <!-- ── RIGHT: PREVIEW ── -->
-    <main class="preview-panel" id="preview-panel">
+    <!-- ── PREVIEW PANEL (desliza da direita no desktop) ── -->
+    <aside class="preview-panel" id="preview-panel">
 
-      <div class="preview-empty" id="preview-empty">
-        <div class="empty-blob"></div>
-        <div class="empty-icon">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-            <rect x="3" y="3" width="18" height="18" rx="3" stroke="url(#pe1)" stroke-width="1.5"/>
-            <circle cx="8.5" cy="8.5" r="1.5" fill="url(#pe2)"/>
-            <path d="M21 15l-5-5L5 21" stroke="url(#pe3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <defs>
-              <linearGradient id="pe1" x1="3" y1="3" x2="21" y2="21"><stop stop-color="#818CF8"/><stop offset="1" stop-color="#06B6D4"/></linearGradient>
-              <linearGradient id="pe2" x1="7" y1="7" x2="10" y2="10"><stop stop-color="#818CF8"/><stop offset="1" stop-color="#06B6D4"/></linearGradient>
-              <linearGradient id="pe3" x1="5" y1="15" x2="21" y2="21"><stop stop-color="#818CF8"/><stop offset="1" stop-color="#06B6D4"/></linearGradient>
-            </defs>
-          </svg>
+      <!-- topbar do preview -->
+      <div class="preview-topbar">
+        <div class="preview-title-wrap">
+          <span class="preview-label">CRIATIVO</span>
+          <span class="preview-platform-badge" id="preview-platform-badge">Instagram Feed</span>
         </div>
-        <h2>Sua arte aparece aqui</h2>
-        <p>Converse com o designer para criar criativos incríveis</p>
-        <div class="empty-platforms">
-          <span>Meta Ads</span><span>Instagram</span><span>TikTok</span><span>Pinterest</span>
-        </div>
-      </div>
-
-      <div class="preview-content" id="preview-content" style="display:none">
-        <div class="preview-topbar">
-          <div class="preview-title-wrap">
-            <span class="preview-label">CRIATIVO</span>
-            <span class="preview-platform-badge" id="preview-platform-badge">Instagram Feed</span>
-          </div>
-          <div class="preview-topbar-actions">
-            <button class="tb-btn" id="btn-prev" onclick="App.prevSlide()" style="display:none">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <span class="slide-counter" id="slide-counter" style="display:none">1 / 1</span>
-            <button class="tb-btn" id="btn-next" onclick="App.nextSlide()" style="display:none">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
-          </div>
-        </div>
-
-        <div class="preview-stage" id="preview-stage">
-          <div class="stage-loading" id="stage-loading">
-            <div class="gen-spinner"></div>
-            <p class="gen-label" id="gen-label">Gerando sua arte...</p>
-            <div class="gen-progress">
-              <div class="gen-bar" id="gen-bar"></div>
-            </div>
-          </div>
-          <canvas id="main-canvas" style="display:none"></canvas>
-        </div>
-
-        <div class="preview-actions">
-          <button class="action-btn primary" onclick="App.download()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Baixar arte
+        <div class="preview-topbar-actions">
+          <button class="tb-btn" id="btn-prev" onclick="App.prevSlide()" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
-          <button class="action-btn" onclick="App.downloadAll()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-            Baixar tudo
+          <span class="slide-counter" id="slide-counter" style="display:none">1 / 1</span>
+          <button class="tb-btn" id="btn-next" onclick="App.nextSlide()" style="display:none">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <button class="tb-btn close-preview-btn" onclick="App.closePreview()" title="Fechar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
       </div>
 
-    </main>
+      <!-- stage -->
+      <div class="preview-stage" id="preview-stage">
+        <div class="stage-loading" id="stage-loading">
+          <div class="gen-spinner"></div>
+          <p class="gen-label" id="gen-label">Gerando sua arte...</p>
+          <div class="gen-progress"><div class="gen-bar" id="gen-bar"></div></div>
+        </div>
+        <canvas id="main-canvas" style="display:none"></canvas>
+      </div>
+
+      <!-- actions -->
+      <div class="preview-actions">
+        <button class="action-btn primary" onclick="App.download()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Baixar arte
+        </button>
+        <button class="action-btn" onclick="App.downloadAll()" id="btn-download-all" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          Baixar tudo
+        </button>
+      </div>
+
+    </aside>
 
   </div>
 </div>

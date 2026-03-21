@@ -8,10 +8,11 @@ const App = (() => {
   let currentSlide    = 0;
   let currentBriefing = {};
   let sessionId       = null;
-  let activeMobileTab = 'chat';
 
-  const $ = id => document.getElementById(id);
-  const el = (tag, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; return e; };
+  const $        = id => document.getElementById(id);
+  const el       = (tag, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; return e; };
+  const isMobile = () => window.innerWidth <= 768;
+  /* global Canvas */ // definido em canvas.js
 
   // ── Init ───────────────────────────────────────────────
   function init() {
@@ -22,7 +23,7 @@ const App = (() => {
   }
 
   // ══════════════════════════════════════
-  // SESSION & HISTORY
+  // HISTORY
   // ══════════════════════════════════════
 
   function newSession() {
@@ -30,8 +31,7 @@ const App = (() => {
     $('msgs').innerHTML = '';
     results = []; currentSlide = 0; currentBriefing = {};
     sessionId = 'session_' + Date.now();
-    $('preview-empty').style.display   = 'flex';
-    $('preview-content').style.display = 'none';
+    closePreview();
     closeHistory();
     Agent.start();
   }
@@ -75,19 +75,6 @@ const App = (() => {
 
   function loadSession() { closeHistory(); newSession(); }
 
-  // ══════════════════════════════════════
-  // MOBILE
-  // ══════════════════════════════════════
-
-  function mobileTab(tab) {
-    activeMobileTab = tab;
-    $('tab-chat').classList.toggle('active', tab === 'chat');
-    $('tab-preview').classList.toggle('active', tab === 'preview');
-    const pv = $('preview-panel');
-    if (tab === 'preview') pv.classList.add('mobile-visible');
-    else pv.classList.remove('mobile-visible');
-  }
-
   function toggleHistory() {
     const panel   = $('history-panel');
     const overlay = $('history-overlay');
@@ -99,6 +86,18 @@ const App = (() => {
   function closeHistory() {
     $('history-panel').classList.remove('open');
     $('history-overlay').classList.remove('visible');
+  }
+
+  // ══════════════════════════════════════
+  // PREVIEW PANEL (desktop only)
+  // ══════════════════════════════════════
+
+  function openPreview() {
+    $('workspace').classList.add('preview-open');
+  }
+
+  function closePreview() {
+    $('workspace').classList.remove('preview-open');
   }
 
   // ══════════════════════════════════════
@@ -139,6 +138,7 @@ const App = (() => {
     const wrap = el('div', 'msg-wrap ai');
     const av   = el('div', 'msg-av');
     av.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5z" fill="url(#avG)"/><defs><linearGradient id="avG" x1="2" y1="7" x2="22" y2="7"><stop stop-color="#818CF8"/><stop offset="1" stop-color="#06B6D4"/></linearGradient></defs></svg>`;
+
     const body   = el('div', 'msg-body');
     const bubble = el('div', 'bubble');
     bubble.innerHTML = formatText(text);
@@ -193,25 +193,25 @@ const App = (() => {
     const card = el('div', 'summary-card');
     card.innerHTML = `
       <div class="summary-card-header">Resumo do briefing</div>
-      ${summaryRow('📌 Negócio',    briefing.business   || '—')}
-      ${summaryRow('🛠️ Serviços',  briefing.services   || '—')}
-      ${summaryRow('👤 Público',   briefing.audience   || '—')}
-      ${summaryRow('📱 Plataforma', platformLabels      || '—')}
-      ${summaryRow('🎯 Objetivo',  briefing.objective  || '—')}
-      ${summaryRow('🎨 Estilo',    briefing.style      || 'Automático')}
-      ${summaryRow('✍️ Texto',     briefing.text       || '—')}
+      ${srow('📌 Negócio',    briefing.business  || '—')}
+      ${srow('🛠️ Serviços',  briefing.services  || '—')}
+      ${srow('👤 Público',   briefing.audience  || '—')}
+      ${srow('📱 Plataforma', platformLabels     || '—')}
+      ${srow('🎯 Objetivo',  briefing.objective || '—')}
+      ${srow('🎨 Estilo',    briefing.style     || 'Automático')}
+      ${srow('✍️ Texto',     briefing.text      || '—')}
     `;
     body.appendChild(card);
 
     if (chips.length) {
-      const chipsRow = el('div', 'chips');
+      const row = el('div', 'chips');
       chips.forEach(chip => {
         const btn = el('button', `chip ${chip.cls || ''}`.trim());
         btn.textContent = chip.label;
         btn.addEventListener('click', () => { disableChips(); chip.action(); });
-        chipsRow.appendChild(btn);
+        row.appendChild(btn);
       });
-      body.appendChild(chipsRow);
+      body.appendChild(row);
     }
 
     wrap.appendChild(av);
@@ -220,17 +220,15 @@ const App = (() => {
     scrollToBottom();
   }
 
-  function summaryRow(key, val) {
-    return `<div class="summary-row"><span class="summary-key">${key}</span><span class="summary-val">${escapeHtml(String(val))}</span></div>`;
+  function srow(k, v) {
+    return `<div class="summary-row"><span class="summary-key">${k}</span><span class="summary-val">${escapeHtml(String(v))}</span></div>`;
   }
 
   function disableChips() {
     document.querySelectorAll('.chip:not([data-multiselect])').forEach(c => { c.disabled = true; });
   }
 
-  // ══════════════════════════════════════
-  // TYPING
-  // ══════════════════════════════════════
+  // ── Typing ─────────────────────────────────────────────
 
   function showTyping() {
     if ($('typing-indicator')) return;
@@ -251,29 +249,47 @@ const App = (() => {
   }
 
   // ══════════════════════════════════════
-  // PREVIEW
+  // PREVIEW / GENERATION
   // ══════════════════════════════════════
 
   function showPreviewLoading() {
-    $('preview-empty').style.display   = 'none';
-    $('preview-content').style.display = 'flex';
-    $('stage-loading').style.display   = 'flex';
-    $('main-canvas').style.display     = 'none';
-    $('gen-bar').style.width           = '0%';
-    resetCarouselNav();
-    if (window.innerWidth <= 768) mobileTab('preview');
+    if (!isMobile()) {
+      // Desktop: abre painel lateral
+      openPreview();
+      $('stage-loading').style.display = 'flex';
+      $('main-canvas').style.display   = 'none';
+      $('gen-bar').style.width         = '0%';
+      resetCarouselNav();
+    }
+    // Mobile: não faz nada aqui, o progresso vai aparecer no chat via mensagem
   }
 
-  function updateGenLabel(text) { $('gen-label').textContent = text; }
+  function updateGenLabel(text) {
+    if (!isMobile()) $('gen-label').textContent = text;
+  }
 
   function updateGenProgress(pct) {
-    $('gen-bar').style.width      = `${pct}%`;
-    $('gen-bar').style.transition = 'width 0.4s ease';
+    if (!isMobile()) {
+      $('gen-bar').style.width      = `${pct}%`;
+      $('gen-bar').style.transition = 'width 0.4s ease';
+    }
   }
 
   async function renderResults(imgs, briefing) {
     currentBriefing = briefing;
     results = []; currentSlide = 0;
+
+    const LABELS = {
+      instagram_feed:'📸 Instagram Feed', instagram_stories:'📖 Instagram Stories',
+      instagram_carrossel:'🔄 Carrossel', meta_ads:'📣 Meta Ads',
+      tiktok_ads:'🎵 TikTok Ads', pinterest_ads:'📌 Pinterest Ads',
+    };
+    const platformLabel = LABELS[(briefing.platforms || [])[0]] || 'Criativo';
+
+    if (!isMobile()) {
+      $('preview-platform-badge').textContent = platformLabel;
+    }
+
     const canvas = $('main-canvas');
 
     for (let i = 0; i < imgs.length; i++) {
@@ -293,16 +309,90 @@ const App = (() => {
       }
     }
 
-    $('stage-loading').style.display = 'none';
-    showSlide(0);
+    if (isMobile()) {
+      // Mobile: renderiza inline no chat
+      renderInlineCard(results, briefing, platformLabel);
+    } else {
+      // Desktop: mostra no painel lateral
+      $('stage-loading').style.display = 'none';
+      showSlide(0);
+      if (results.length > 1) {
+        setupCarouselNav();
+        $('btn-download-all').style.display = 'flex';
+      }
+    }
 
-    const LABELS = { instagram_feed:'📸 Instagram Feed', instagram_stories:'📖 Instagram Stories', instagram_carrossel:'🔄 Carrossel', meta_ads:'📣 Meta Ads', tiktok_ads:'🎵 TikTok Ads', pinterest_ads:'📌 Pinterest Ads' };
-    $('preview-platform-badge').textContent = LABELS[(briefing.platforms || [])[0]] || 'Criativo';
-
-    if (results.length > 1) setupCarouselNav();
     saveCurrentSession();
   }
 
+  /* ── Inline card para mobile ── */
+  function renderInlineCard(imgs, briefing, platformLabel) {
+    let idx = 0;
+    const msgs = $('msgs');
+    const wrap = el('div', 'msg-wrap ai');
+    const av   = el('div', 'msg-av');
+    const body = el('div', 'msg-body');
+
+    const card = el('div', 'art-card');
+
+    // Image element
+    const imgEl = el('img', '');
+    imgEl.style.display = 'block';
+    if (imgs[0]?.dataURL) imgEl.src = imgs[0].dataURL;
+    else imgEl.alt = 'Erro ao gerar';
+    card.appendChild(imgEl);
+
+    // Nav bar
+    const nav = el('div', 'art-card-nav');
+
+    const counter = el('span', 'art-card-counter');
+    counter.textContent = imgs.length > 1 ? `1 / ${imgs.length}` : platformLabel;
+
+    const actions = el('div', 'art-card-actions');
+
+    if (imgs.length > 1) {
+      const prevBtn = el('button', 'art-card-btn');
+      prevBtn.innerHTML = '←';
+      prevBtn.addEventListener('click', () => {
+        idx = (idx - 1 + imgs.length) % imgs.length;
+        if (imgs[idx]?.dataURL) imgEl.src = imgs[idx].dataURL;
+        counter.textContent = `${idx + 1} / ${imgs.length}`;
+      });
+
+      const nextBtn = el('button', 'art-card-btn');
+      nextBtn.innerHTML = '→';
+      nextBtn.addEventListener('click', () => {
+        idx = (idx + 1) % imgs.length;
+        if (imgs[idx]?.dataURL) imgEl.src = imgs[idx].dataURL;
+        counter.textContent = `${idx + 1} / ${imgs.length}`;
+      });
+
+      actions.appendChild(prevBtn);
+      actions.appendChild(nextBtn);
+    }
+
+    const dlBtn = el('button', 'art-card-btn primary');
+    dlBtn.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Baixar`;
+    dlBtn.addEventListener('click', () => {
+      const r = imgs[idx];
+      if (!r?.dataURL) return;
+      const a = document.createElement('a');
+      a.href = r.dataURL; a.download = `kreio-arte-${idx + 1}.png`; a.click();
+    });
+    actions.appendChild(dlBtn);
+
+    nav.appendChild(counter);
+    nav.appendChild(actions);
+    card.appendChild(nav);
+
+    body.appendChild(card);
+    wrap.appendChild(av);
+    wrap.appendChild(body);
+    msgs.appendChild(wrap);
+    scrollToBottom();
+  }
+
+  /* ── Desktop slides ── */
   function showSlide(index) {
     if (index < 0 || index >= results.length) return;
     currentSlide = index;
@@ -340,6 +430,7 @@ const App = (() => {
     $('btn-next').style.display      = 'flex';
     $('slide-counter').style.display = 'inline';
     $('slide-counter').textContent   = `1 / ${results.length}`;
+
     const stage = $('preview-stage');
     let strip = document.getElementById('carousel-strip');
     if (!strip) { strip = el('div', 'carousel-strip'); strip.id = 'carousel-strip'; stage.appendChild(strip); }
@@ -355,6 +446,7 @@ const App = (() => {
   function resetCarouselNav() {
     $('btn-prev').style.display = $('btn-next').style.display = 'none';
     $('slide-counter').style.display = 'none';
+    if ($('btn-download-all')) $('btn-download-all').style.display = 'none';
     const strip = document.getElementById('carousel-strip');
     if (strip) strip.remove();
   }
@@ -373,7 +465,7 @@ const App = (() => {
   }
 
   // ══════════════════════════════════════
-  // DOWNLOAD
+  // DOWNLOAD (desktop)
   // ══════════════════════════════════════
 
   function download() {
@@ -416,11 +508,12 @@ const App = (() => {
     showTyping, hideTyping,
     send, handleKey, autoResize, setInputEnabled,
     showPreviewLoading, updateGenLabel, updateGenProgress,
-    renderResults, reRenderTextOnly, showSlide,
-    prevSlide, nextSlide, goToSlide,
+    renderResults, reRenderTextOnly,
+    showSlide, prevSlide, nextSlide, goToSlide,
     download, downloadAll,
     newSession, loadSession, renderHistory,
-    toggleHistory, mobileTab,
+    toggleHistory, closePreview,
+    mobileTab: () => {},
   };
 
 })();
